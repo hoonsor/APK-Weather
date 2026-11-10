@@ -1,9 +1,8 @@
 {
-  "status": "planned",
   "api": 1,
   "app": "倬的天氣",
   "package": "tw.hoonsor.weather",
-  "version": "0.0.0",
+  "version": "0.6.0",
   "description": "台灣天氣、穿著建議、空氣品質警戒、颱風對家與學校的影響。資料來自中央氣象署與環境部，判斷在手機上用規則完成。",
   "actions": [
     {
@@ -16,15 +15,32 @@
         "properties": {
           "place": {
             "type": "string",
-            "enum": ["auto", "current", "home", "school"],
+            "enum": [
+              "auto",
+              "current",
+              "home",
+              "school"
+            ],
             "description": "查哪裡：auto＝依明天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校"
           },
-          "includeAir": { "type": "boolean", "description": "有空品警戒時一起唸，預設 true" },
-          "includeTyphoon": { "type": "boolean", "description": "有颱風時一起唸，預設 true" }
+          "includeAir": {
+            "type": "boolean",
+            "description": "有空品警戒時一起唸，預設 true"
+          },
+          "includeTyphoon": {
+            "type": "boolean",
+            "description": "有颱風時一起唸，預設 true"
+          }
         },
         "required": []
       },
-      "examples": ["明天天氣怎樣", "明天要帶傘嗎", "明天穿什麼", "明天學校那邊會不會下雨", "明天家裡那邊冷不冷"]
+      "examples": [
+        "明天天氣怎樣",
+        "明天要帶傘嗎",
+        "明天穿什麼",
+        "明天學校那邊會不會下雨",
+        "明天家裡那邊冷不冷"
+      ]
     },
     {
       "name": "weather_now",
@@ -36,13 +52,21 @@
         "properties": {
           "place": {
             "type": "string",
-            "enum": ["current", "home", "school"],
+            "enum": [
+              "current",
+              "home",
+              "school"
+            ],
             "description": "查哪裡，預設 current（目前位置）"
           }
         },
         "required": []
       },
-      "examples": ["現在外面幾度", "等一下會下雨嗎", "學校現在天氣怎樣"]
+      "examples": [
+        "現在外面幾度",
+        "等一下會下雨嗎",
+        "學校現在天氣怎樣"
+      ]
     },
     {
       "name": "weather_week",
@@ -54,13 +78,21 @@
         "properties": {
           "place": {
             "type": "string",
-            "enum": ["current", "home", "school"],
+            "enum": [
+              "current",
+              "home",
+              "school"
+            ],
             "description": "查哪裡，預設 current（目前位置）"
           }
         },
         "required": []
       },
-      "examples": ["這禮拜天氣怎樣", "週末會不會下雨", "下週會變冷嗎"]
+      "examples": [
+        "這禮拜天氣怎樣",
+        "週末會不會下雨",
+        "下週會變冷嗎"
+      ]
     },
     {
       "name": "air_quality",
@@ -72,18 +104,29 @@
         "properties": {
           "place": {
             "type": "string",
-            "enum": ["current", "home", "school"],
+            "enum": [
+              "current",
+              "home",
+              "school"
+            ],
             "description": "查哪裡，預設 current（目前位置）"
           },
           "day": {
             "type": "string",
-            "enum": ["today", "tomorrow"],
+            "enum": [
+              "today",
+              "tomorrow"
+            ],
             "description": "today＝現在、tomorrow＝明天預報，預設 today"
           }
         },
         "required": []
       },
-      "examples": ["現在空氣好不好", "明天 PM2.5 高不高", "要不要戴口罩"]
+      "examples": [
+        "現在空氣好不好",
+        "明天 PM2.5 高不高",
+        "要不要戴口罩"
+      ]
     },
     {
       "name": "typhoon_status",
@@ -95,7 +138,12 @@
         "properties": {},
         "required": []
       },
-      "examples": ["颱風會不會來", "這個颱風什麼時候最近", "明天會不會放颱風假", "學校那邊會進暴風圈嗎"]
+      "examples": [
+        "颱風會不會來",
+        "這個颱風什麼時候最近",
+        "明天會不會放颱風假",
+        "學校那邊會進暴風圈嗎"
+      ]
     },
     {
       "name": "place_list",
@@ -107,7 +155,11 @@
         "properties": {},
         "required": []
       },
-      "examples": ["天氣的家設在哪", "我設定的地點有哪些", "現在定位在哪一區"]
+      "examples": [
+        "天氣的家設在哪",
+        "我設定的地點有哪些",
+        "現在定位在哪一區"
+      ]
     },
     {
       "name": "place_set",
@@ -119,7 +171,10 @@
         "properties": {
           "which": {
             "type": "string",
-            "enum": ["home", "school"],
+            "enum": [
+              "home",
+              "school"
+            ],
             "description": "要設定家還是學校"
           },
           "town": {
@@ -131,9 +186,15 @@
             "description": "true＝直接用目前位置所在的鄉鎮，這時可以不給 town"
           }
         },
-        "required": ["which"]
+        "required": [
+          "which"
+        ]
       },
-      "examples": ["把學校設成現在這裡", "天氣的家改成板橋區", "學校地點設成桃園市中壢區"]
+      "examples": [
+        "把學校設成現在這裡",
+        "天氣的家改成板橋區",
+        "學校地點設成桃園市中壢區"
+      ]
     },
     {
       "name": "backup_export",
@@ -145,7 +206,10 @@
         "properties": {},
         "required": []
       },
-      "examples": ["備份天氣設定", "匯出天氣 APP 的備份"]
+      "examples": [
+        "備份天氣設定",
+        "匯出天氣 APP 的備份"
+      ]
     },
     {
       "name": "backup_import",
@@ -157,13 +221,19 @@
         "properties": {
           "mode": {
             "type": "string",
-            "enum": ["merge", "replace"],
+            "enum": [
+              "merge",
+              "replace"
+            ],
             "description": "merge＝合併、replace＝取代，預設 replace"
           }
         },
         "required": []
       },
-      "examples": ["還原天氣備份", "從檔案匯入天氣設定"]
+      "examples": [
+        "還原天氣備份",
+        "從檔案匯入天氣設定"
+      ]
     }
   ]
 }

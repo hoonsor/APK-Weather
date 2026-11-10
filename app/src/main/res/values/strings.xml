@@ -1,3 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="widget_41_label">天氣 4×1（A／C 可切換）</string>
+    <string name="widget_41_desc">現在＋未來 4 天，或現在｜明天；點右側圓點切換</string>
+    <string name="widget_22_now_label">天氣 2×2 現在</string>
+    <string name="widget_22_now_desc">目前溫度、高低溫、降雨與明天穿著</string>
+    <string name="widget_22_tomorrow_label">天氣 2×2 明天</string>
+    <string name="widget_22_tomorrow_desc">明天學校或家的溫度、降雨與穿著</string>
 </resources>

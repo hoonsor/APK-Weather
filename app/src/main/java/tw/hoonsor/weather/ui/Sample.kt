@@ -28,7 +28,7 @@ object Sample {
     val air = AirReading(112, 34.0, "中壢測站", isForecast = false)
 
     fun typhoon(now: LocalDateTime = LocalDateTime.now()) = Typhoon(
-        name = "銀杏颱風（範例）", kind = "中度颱風", position = "恆春東南方約 620 公里",
+        name = "銀杏（範例）", kind = "中度颱風", position = "恆春東南方約 620 公里",
         track = listOf(
             TrackPoint(now.plusHours(24), 20.2, 125.0, 200, 120),
             TrackPoint(now.plusHours(48), 22.6, 122.4, 200, 180),

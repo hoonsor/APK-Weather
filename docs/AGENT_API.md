@@ -1,21 +1,21 @@
 # Agent API：倬的天氣（tw.hoonsor.weather）
 
-> 狀態：**規劃中**（v0.0.0，尚未實作）。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
+> 狀態：**已實作**（v0.6.0，9 個動作；`agent/AgentProvider.kt`）。資料來源欄位要等授權碼到手後用實際資料核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
 > 機器可讀版：`docs/agent-manifest.json`（實作後與 `describe` 回傳完全一致，JVM 測試比對）。
 
 ## 動作總覽
 
 | 動作 | risk | 參數 | 範例句 | 狀態 |
 |---|---|---|---|---|
-| weather_tomorrow | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 明天要帶傘嗎 | 規劃中 |
-| weather_now | read | place?（current／home／school） | 現在外面幾度 | 規劃中 |
-| weather_week | read | place? | 週末會不會下雨 | 規劃中 |
-| air_quality | read | place?、day?（today／tomorrow） | 要不要戴口罩 | 規劃中 |
-| typhoon_status | read | — | 颱風會不會來 | 規劃中 |
-| place_list | read | — | 我設定的地點有哪些 | 規劃中 |
-| place_set | reversible | which（home／school）、town?、useCurrent? | 把學校設成現在這裡 | 規劃中 |
-| backup_export | reversible | — | 備份天氣設定 | 規劃中 |
-| backup_import | destructive | mode?（merge／replace） | 還原天氣備份 | 規劃中 |
+| weather_tomorrow | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 明天要帶傘嗎 | 已實作 |
+| weather_now | read | place?（current／home／school） | 現在外面幾度 | 已實作 |
+| weather_week | read | place? | 週末會不會下雨 | 已實作 |
+| air_quality | read | place?、day?（today／tomorrow） | 要不要戴口罩 | 已實作 |
+| typhoon_status | read | — | 颱風會不會來 | 已實作 |
+| place_list | read | — | 我設定的地點有哪些 | 已實作 |
+| place_set | reversible | which（home／school）、town?、useCurrent? | 把學校設成現在這裡 | 已實作 |
+| backup_export | reversible | — | 備份天氣設定 | 已實作 |
+| backup_import | destructive | mode?（merge／replace） | 還原天氣備份 | 已實作 |
 
 ## 共通行為
 

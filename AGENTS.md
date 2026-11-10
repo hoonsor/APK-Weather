@@ -41,10 +41,17 @@ $env:JAVA_HOME="C:\Users\hoonsor\.jdks\jbr-21.0.11"; .\gradlew.bat testProdDebug
 app/src/main/java/
 ├─ tw/hoonsor/agent/HoonsorAgent.kt   共用 Agent SDK（從語音總控複製，不要在這裡改）
 └─ tw/hoonsor/weather/
-   ├─ domain/   純邏輯（不 import android）：Models、Clothing（F06）、TyphoonImpact（F11）、Workday（F07/F08）、Broadcast（播報句）、Aqi、WeatherIcon
-   ├─ agent/    WeatherAgentCatalog（describe 清單）；AgentProvider 在 v0.5 加
-   └─ ui/       MainActivity（v0.1 骨架畫面）、Sample（範例資料）、theme/Palette（色票照 docs/DESIGN.md）
-app/src/test/   JVM 測試：穿著、颱風、辦公日曆、播報句、manifest 一致性
+   ├─ App.kt    Graph 單例（Repository、Settings、Vault）；Application 建通知頻道與排程
+   ├─ domain/   純邏輯（不 import android）：Models、Snapshot、Clothing（F06）、TyphoonImpact（F11）、Workday（F07/F08）、Broadcast（播報句）、Aqi、WeatherIcon、Sun（日出日落）
+   ├─ data/     Repository（唯一入口：地點、快照快取、颱風、空品、辦公日曆、停班停課、報告）
+   │            Sources（所有連線）、*Parse（純解析：CwaParse、Parsers.kt、SnapshotJson、JsonX 寬鬆讀取）
+   │            Settings（settings.xml）、Vault（授權碼，Keystore AES-GCM，不備份）、Locator（LocationManager＋Geocoder）
+   ├─ widget/   WidgetData（小工具內容，純資料）、WeatherWidgets（Glance：4×1 A／C、2×2 現在、2×2 明天、ToggleMode）
+   ├─ agent/    WeatherAgentCatalog（describe）、AgentProvider（9 個動作）
+   ├─ work/     Scheduler、RefreshWorker（定時更新＋小工具＋突發通知）、MorningWorker（F19）、Alerts、Notifier
+   ├─ backup/   Backup（分享、存下載、SAF 存檔、匯入合併／取代、匯入前自動備份與復原）
+   └─ ui/       MainActivity（畫面切換、權限、檔案選擇、朗讀）、HomeScreen、SettingsScreen、HealthScreen（含 API 測試台）、Common、theme/Palette
+app/src/test/   JVM 測試：穿著、颱風、辦公日曆、播報句、解析器（照文件手寫的範例）、小工具內容、manifest 一致性
 docs/           FEATURES、DATA_SOURCES、AGENT_API、agent-manifest.json、DESIGN、design/mockups.html
 ```
 
@@ -54,6 +61,10 @@ docs/           FEATURES、DATA_SOURCES、AGENT_API、agent-manifest.json、DESI
 - ColorOS 會擋背景排程與小工具更新：健康檢查頁要引導「電池不限制」「自啟動」「關聯啟動」
 - 背景定位需要「一律允許」；沒給時退回「最後已知位置＋常用地點」，不能讓小工具空白
 - 桌面小工具不能偵測滑動手勢（Glance／RemoteViews 只有點擊）；4×1 的 A／C 版面切換用右側圓點的點擊（actionRunCallback 改該 widget 的 Glance state），每個 widget id 各自記住版面
+- 小工具內容只能由 `WeatherWidgets.pushAll()` 寫進 Glance 狀態（provideContent 不會自己讀檔）；圖示必須是 `res/drawable` 的 XML，由 `python tools/gen_drawables.py app/src/main/res/drawable` 產生（改圖示或色票改這支腳本再重跑）；Glance 一個 Row／Column 最多 10 個子元件
+- ContentProvider 比 Application.onCreate 早建立：`AgentProvider.onCreate` 自己呼叫 `Graph.init`
+- 氣象署、颱風、空品的 JSON 鍵名還沒用實際資料核對（DATA_SOURCES.md「未確認」）：解析一律走 `J` 寬鬆讀取；設定頁「測試」按鈕會說「連線成功但解析不到」，看到就要用實際回應修 *Parse 並更新 ParsersTest 的範例
+- `HoonsorAgent.PERMISSION` 是權限名稱字串，錯誤碼要用 `HoonsorAgent.PERMISSION_DENIED`
 - API 授權碼（氣象署、環境部）用 Keystore 加密存在手機；開發用值走 dotenvx，絕不寫進 repo
 
 ## Always／Ask／Never

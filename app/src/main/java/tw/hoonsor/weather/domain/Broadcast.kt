@@ -89,7 +89,7 @@ object Broadcast {
         short: Boolean,
     ): String {
         val sb = StringBuilder()
-        sb.append(if (short) "另外，" else "").append("${t.name}${t.kind}目前在${t.position}")
+        sb.append(if (short) "另外，" else "").append("${t.kind}${t.name}目前在${t.position}")
         if (closestAt != null) {
             sb.append("，預估${whenText(closestAt, now.toLocalDate())}最接近台灣")
         }

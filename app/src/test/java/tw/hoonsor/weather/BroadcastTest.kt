@@ -37,10 +37,10 @@ class BroadcastTest {
     }
 
     @Test fun typhoonSentence() {
-        val t = Typhoon("銀杏颱風", "中度颱風", "恆春東南方約 620 公里", listOf(TrackPoint(now.plusHours(56), 22.6, 122.4, 150, 120)), Typhoon.Warning.SEA)
+        val t = Typhoon("銀杏", "中度颱風", "恆春東南方約 620 公里", listOf(TrackPoint(now.plusHours(56), 22.6, 122.4, 150, 120)), Typhoon.Warning.SEA)
         val s = Broadcast.typhoon(t, LocalDateTime.of(2026, 11, 13, 6, 0), now, listOf("學校" to Level.DIRECT, "家裡" to Level.OUTER), "停班停課還沒公布", short = true)
         assertEquals(
-            "另外，銀杏颱風中度颱風目前在恆春東南方約 620 公里，預估星期五清晨最接近台灣，已發布海上警報。依目前路徑，學校可能進入暴風圈，家裡是外圍影響。路徑還可能改變，會再更新。停班停課還沒公布。",
+            "另外，中度颱風銀杏目前在恆春東南方約 620 公里，預估星期五清晨最接近台灣，已發布海上警報。依目前路徑，學校可能進入暴風圈，家裡是外圍影響。路徑還可能改變，會再更新。停班停課還沒公布。",
             s,
         )
     }
