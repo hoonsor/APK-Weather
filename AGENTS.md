@@ -31,6 +31,7 @@ Kotlin、minSdk 30／targetSdk 35、Compose＋M3、Jetpack Glance（小工具）
 - Gradle 不能放中文路徑：程式碼一律在 `D:\dev\APK-Weather`
 - ColorOS 會擋背景排程與小工具更新：健康檢查頁要引導「電池不限制」「自啟動」「關聯啟動」
 - 背景定位需要「一律允許」；沒給時退回「最後已知位置＋常用地點」，不能讓小工具空白
+- 桌面小工具不能偵測滑動手勢（Glance／RemoteViews 只有點擊）；4×1 的 A／C 版面切換用右側圓點的點擊（actionRunCallback 改該 widget 的 Glance state），每個 widget id 各自記住版面
 - API 授權碼（氣象署、環境部）用 Keystore 加密存在手機；開發用值走 dotenvx，絕不寫進 repo
 
 ## Always／Ask／Never

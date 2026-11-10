@@ -75,6 +75,31 @@ svg{display:block}
 .C .app{background:linear-gradient(180deg,hsl(214 36% 14%),hsl(228 30% 8%) 35%)}
 .C .card{background:hsl(220 26% 13%);border:1px solid hsl(220 24% 22%);border-radius:22px}
 
+/* ---------- 定案草稿：4×1 小工具（A／C 兩種版面可切換） ---------- */
+.w41{height:100px;position:relative;display:flex;align-items:stretch;color:#fff}
+.w41.mA{padding:8px 34px 8px 10px;gap:8px;text-shadow:0 1px 6px hsl(230 50% 5% / .75)}
+.w41.mA .l{min-width:112px;display:flex;flex-direction:column;justify-content:center}
+.w41.mA .pl{font-size:13px;display:flex;align-items:center;gap:6px;opacity:.95}
+.w41.mA .t{font-size:40px;font-weight:200;line-height:1}
+.w41.mA .hl{font-size:12.5px;opacity:.9}
+.w41.mA .days{flex:1;display:grid;grid-template-columns:repeat(4,1fr);text-align:center;font-size:12px;align-content:center}
+.w41.mA .days svg{margin:1px auto}
+.w41.mC{padding:7px 34px 7px 7px;gap:7px;border-radius:24px;background:linear-gradient(135deg,hsl(212 40% 18% / .95),hsl(250 28% 16% / .95));border:1px solid hsl(220 40% 40% / .35)}
+.w41.mC .blk{flex:1;border-radius:17px;padding:6px 9px;background:hsl(220 30% 10% / .45);display:flex;flex-direction:column;justify-content:space-between}
+.w41.mC .blk.tm{background:hsl(35 50% 40% / .16);border:1px solid hsl(35 70% 65% / .22)}
+.w41.mC .k{font-size:11.5px;color:hsl(220 14% 74%);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.w41.mC .tm .k:first-child{color:hsl(35 70% 78%)}
+.w41.mC .r{display:flex;align-items:center;justify-content:space-between}
+.w41.mC .t{font-size:27px;font-weight:300;line-height:1}
+.bdg{display:inline-flex;align-items:center;gap:2px;font-size:11px;padding:1px 6px 1px 3px;border-radius:999px;background:hsl(14 70% 45% / .35);border:1px solid hsl(14 80% 62% / .55);color:hsl(18 90% 82%);text-shadow:none}
+.bdg svg{width:14px;height:14px}
+.sw{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:26px;height:64px;border-radius:13px;border:1px solid hsl(220 40% 85% / .22);background:hsl(230 30% 12% / .35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0}
+.sw i{display:block;width:6px;height:6px;border-radius:3px;background:hsl(220 30% 85% / .45);transition:height .2s}
+.sw i.on{height:16px;background:hsl(198 80% 75%)}
+.strip{padding:12px;border-radius:22px;background:radial-gradient(120% 120% at 20% 0%,hsl(232 40% 22%) 0%,transparent 70%),linear-gradient(180deg,hsl(228 30% 12%),hsl(236 26% 7%));width:360px}
+.strip+.cap{margin-top:16px}
+.hint{font-size:12.5px;color:var(--mute);margin:8px 4px 0;line-height:1.7;max-width:360px}
+
 /* ---------- APP 共用 ---------- */
 .app{min-height:1200px;overflow:hidden;padding:40px 14px 20px;position:relative}
 .app.scroll{height:auto}
@@ -123,7 +148,7 @@ svg{display:block}
 </head>
 <body>
 <h1>倬的天氣：版面設計方案</h1>
-<p class="lead">三個方案都包含：桌面 4×2、2×2 小工具與 APP 主畫面。資料是範例（桃園市中壢區，含一個範例颱風）。參考倬給的截圖的資訊架構與操作方式，外觀重新設計。</p>
+<p class="lead">第一個分頁是依倬回饋整合的定案草稿（4×1 小工具可切換 A／C 版面）；後面三個是原始方案 A、B、C（4×2 版）。資料是範例（桃園市中壢區，含一個範例颱風）。參考倬給的截圖的資訊架構與操作方式，外觀重新設計。</p>
 <div class="tabs" id="tabs"></div>
 <p class="optdesc" id="optdesc"></p>
 <div id="stage"></div>
@@ -212,8 +237,20 @@ function widget2b(v){
   <div style="font-size:12px;opacity:.85;margin-top:6px">降雨 ${D.tom.rainDay}% → ${D.tom.rainNight}%</div>
   <div style="display:flex;gap:4px;margin-top:8px;align-items:center">${clo.tee}${clo.jacket}${clo.umbrella}${clo.mask}</div></div>`;
 }
+/* 4×1：mode A＝現在＋4 天（透明），mode C＝現在｜明天（實心面板）。右側圓點＝切換鈕 */
+function widget41(mode,live){
+  const sw=`<button class="sw" title="切換版面" ${live?'data-sw':''}><i class="${mode==='A'?'on':''}"></i><i class="${mode==='C'?'on':''}"></i></button>`;
+  if(mode==='A') return `<div class="w41 mA"><div class="l"><div class="pl">${D.town}<span class="bdg">${clo.storm}颱風</span></div>
+    <div style="display:flex;align-items:center;gap:4px"><span class="t num">${D.now.t}°</span>${partly(34)}</div><div class="hl num">${D.now.hi}° / ${D.now.lo}°</div></div>
+    <div class="days">${D.week.slice(0,4).map(d=>`<div><div>${d[0]}</div>${icon[d[2]](26)}<div class="num" style="line-height:1.15">${d[3]}°</div><div class="num" style="line-height:1.15;opacity:.6">${d[4]}°</div></div>`).join('')}</div>${sw}</div>`;
+  return `<div class="w41 mC"><div class="blk"><div class="k">現在 · ${D.town}</div><div class="r"><span class="t num">${D.now.t}°</span>${partly(30)}</div><div class="k num">${D.now.hi}°/${D.now.lo}° · 雨 ${D.now.rain3h}%</div></div>
+    <div class="blk tm"><div class="k">明天 · 學校<span class="bdg">${clo.storm}颱風</span></div><div class="r"><span class="t num">${D.tom.t[0]}–${D.tom.t[1]}°</span>${partly(30)}</div><div class="k">${clo.tee}${clo.jacket}${clo.umbrella}<span class="num" style="margin-left:2px">雨 ${D.tom.rainNight}%</span></div></div>${sw}</div>`;
+}
+let liveMode='A';
 function homeScreen(v){
   const apps=["電話","訊息","相機","相簿","LINE","日曆","語音總控","鬧鐘"];
+  if(v==="F") return `<div class="home"><div id="w41live">${widget41(liveMode,true)}</div><div class="hw2">${widget2("A")}${widget2b("A")}</div>
+  <div class="appgrid">${apps.map(a=>`<div><div class="ic"></div><div class="lbl">${a}</div></div>`).join('')}</div></div>`;
   return `<div class="home">${widget4(v)}<div class="hw2">${widget2(v)}${widget2b(v)}</div>
   <div class="appgrid">${apps.map(a=>`<div><div class="ic"></div><div class="lbl">${a}</div></div>`).join('')}</div></div>`;
 }
@@ -281,13 +318,15 @@ function minis(){
 }
 function appScreen(v){
   let body='';
+  if(v==="F") body=bar()+hero("A")+typhoonCard()+tomorrowCard(true)+weekCard()+`<div class="card"><div class="ct"><span>逐時</span><small>溫度與降雨機率</small></div>${hourlyChart()}</div>`+aqiCard()+minis();
   if(v==="A") body=bar()+hero(v)+typhoonCard()+tomorrowCard(false)+weekCard()+`<div class="card"><div class="ct"><span>逐時</span><small>溫度與降雨機率</small></div>${hourlyChart()}</div>`+aqiCard()+minis();
   if(v==="B") body=bar()+`<div class="grid2" style="margin-top:6px"><div class="card" style="grid-column:span 2">${hero(v)}</div></div>`+typhoonCard()+`<div class="grid2">${['今天','明天'].map((k,i)=>`<div class="card mini"><div class="k">${k}${i?' · 學校':''}</div><div style="display:flex;align-items:center;justify-content:space-between">${i?`<span class="v num">${D.tom.t[0]}–${D.tom.t[1]}°</span>`:`<span class="v num">${D.now.lo}–${D.now.hi}°</span>`}${partly(36)}</div><div class="s">${i?'雨 20→40% · 薄外套＋傘':'雨 30% · 短袖'}</div></div>`).join('')}</div>`+weekCard()+`<div class="card"><div class="ct"><span>逐時</span></div>${hourlyChart()}</div>`+aqiCard()+minis();
   if(v==="C") body=bar()+tomorrowCard(true)+typhoonCard()+`<div class="card"><div class="ct"><span>現在 · ${D.town}</span><small>20:40 更新</small></div><div style="display:flex;align-items:center;justify-content:space-between"><div><span class="num" style="font-size:46px;font-weight:200">${D.now.t}°</span> <span style="color:var(--mute);font-size:13px">${D.now.w} · 體感 ${D.now.feel}°</span></div>${partly(54)}</div>${hourlyChart()}</div>`+weekCard()+aqiCard()+minis();
-  return `<div class="app">${v==="A"?starsSvg():''}<div style="position:relative">${body}</div></div>`;
+  return `<div class="app">${v==="A"||v==="F"?starsSvg():''}<div style="position:relative">${body}</div></div>`;
 }
 
 const OPT={
+  F:{name:"定案草稿：A＋C",desc:"<b>依倬 11/10 的回饋整合。</b>桌面改成 <b>4×1</b>，同一個小工具有兩種版面：A（現在＋未來 4 天，透明疊在桌布上）和 C（左邊現在、右邊明天）。<b>點右側的圓點就切換</b>，這頁的圓點可以直接點來試。APP 用 A 的夜空樣式，但「明天」改用 C 的大卡片（大圖示、溫度範圍、播報內容、穿著標籤、唸給我聽）。"},
   A:{name:"方案 A：夜空",desc:"<b>最接近你給的截圖的感覺。</b>桌面小工具是透明的，字直接疊在桌布上，像截圖那樣：左邊是目前溫度，右邊 4 天；底下一行放颱風或空品提醒。APP 用深藍夜空漸層加星點，卡片半透明。排列順序沿用截圖：現在 → 颱風（有才出現）→ 明天播報 → 7 日（含每天的穿著圖示）→ 逐時 → 空品 → 其他。"},
   B:{name:"方案 B：石墨網格",desc:"<b>資訊密度最高。</b>小工具有實心底色，桌布再花也看得清楚；4 天各自一格，底下用標籤放 AQI、明天穿著、颱風。APP 用石墨灰色兩欄網格，今天和明天並排比較，青綠色當重點色。適合想一眼看完、不太滑動的用法。"},
   C:{name:"方案 C：明天優先",desc:"<b>以晚間播報為主軸。</b>小工具左右兩塊：左邊現在、右邊明天（依明天上不上班顯示學校或家），底下是明天的穿著圖示和一句建議。APP 第一張卡就是明天的播報內容，附「唸給我聽」按鈕，接著才是颱風、現在、逐時和 7 日。藍紫漸層，琥珀色點綴。"},
@@ -295,6 +334,15 @@ const OPT={
 function render(v){
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   document.getElementById('optdesc').innerHTML=OPT[v].desc;
+  if(v==="F"){
+    document.getElementById('stage').innerHTML=`<div class="row A">
+    <div><p class="cap">桌面：4×1（點右側圓點切換）＋ 兩個 2×2</p><div class="phone">${homeScreen(v)}</div></div>
+    <div><p class="cap">4×1 版面 A：現在＋4 天</p><div class="strip">${widget41('A')}</div>
+      <p class="cap">4×1 版面 C：現在｜明天</p><div class="strip">${widget41('C')}</div>
+      <p class="hint">・點左半邊開 APP；A 點 4 天那區開 7 日預報；C 點明天那塊開明天卡片。<br>・每個小工具各自記住目前版面，放兩個就能一個 A、一個 C。<br>・有颱風或空品橘色以上時，地點旁邊加一個小標籤（4×1 沒有空間放整行提示）。</p></div>
+    <div><p class="cap">APP 主畫面（A 樣式＋C 的明天卡，颱風期間）</p><div class="phone">${appScreen(v)}</div></div></div>`;
+    return;
+  }
   document.getElementById('stage').innerHTML=`<div class="row ${v}">
     <div><p class="cap">桌面：4×2 ＋ 兩個 2×2</p><div class="phone">${homeScreen(v)}</div></div>
     <div><p class="cap">APP 主畫面（颱風期間）</p><div class="phone">${appScreen(v)}</div></div></div>`;
@@ -302,7 +350,8 @@ function render(v){
 document.getElementById('tabs').innerHTML=Object.keys(OPT).map(k=>`<button data-v="${k}">${OPT[k].name}</button>`).join('');
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{render(b.dataset.v);try{history.replaceState(null,'','#opt-'+b.dataset.v.toLowerCase())}catch(e){}});
 const h=(location.hash||'').replace('#opt-','').toUpperCase();
-render(OPT[h]?h:'A');
+document.getElementById('stage').addEventListener('click',e=>{if(e.target.closest('[data-sw]')){liveMode=liveMode==='A'?'C':'A';document.getElementById('w41live').innerHTML=widget41(liveMode,true);}});
+render(OPT[h]?h:'F');
 </script>
 </body>
 </html>
