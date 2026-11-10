@@ -37,14 +37,16 @@ jobs:
 
       # 共用簽章 hoonsor-release.jks：Secrets 由倬用 setup-hoonsor-signing.ps1 寫入；沒有時 Gradle 退回 debug 簽章
       - name: Decode signing key
+        id: sign
         env:
           SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
         run: |
           if [ -n "$SIGNING_KEYSTORE_B64" ]; then
             echo "$SIGNING_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/hoonsor-release.jks"
             echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/hoonsor-release.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::沒有 SIGNING_KEYSTORE_B64，這次用 debug 簽章（不能覆蓋安裝正式簽章版）"
+            echo "::warning::沒有 SIGNING_KEYSTORE_B64，這次用 debug 簽章，只編譯、不發版（倬加入共用簽章後才發 latest／Release）"
           fi
 
       - name: Unit tests and release APKs
@@ -80,7 +82,7 @@ jobs:
 
       # main 每次推送都更新「latest」預先發行版，手機打開固定網址即可下載最新 APK
       - name: Publish rolling latest
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.sign.outputs.signed == 'true'
         run: |
           cp dist/Weather-v*.apk Weather-latest.apk
           cp dist/Weather-LAB-v*.apk Weather-LAB-latest.apk
@@ -94,7 +96,7 @@ jobs:
 
       # 推送 vX.Y.Z tag 時，自動建立 GitHub Release
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && steps.sign.outputs.signed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.apk
