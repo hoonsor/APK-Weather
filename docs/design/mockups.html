@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>倬的天氣：版面設計方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:hsl(225 22% 8%);--ink:hsl(220 20% 92%);--mute:hsl(220 12% 62%);--line:hsl(222 16% 22%);
+  font-family:"Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:var(--page);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{padding:28px 20px 80px;max-width:1280px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:.02em}
+.lead{color:var(--mute);font-size:14px;margin-top:6px;line-height:1.7}
+.tabs{display:flex;gap:8px;margin:20px 0 6px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:14px;color:var(--ink);background:hsl(224 18% 13%);border:1px solid var(--line);padding:9px 16px;border-radius:999px;cursor:pointer}
+.tabs button.on{background:hsl(198 60% 30%);border-color:hsl(198 60% 48%)}
+.optdesc{color:var(--mute);font-size:14px;line-height:1.7;margin:10px 0 22px;max-width:900px}
+.optdesc b{color:var(--ink)}
+.row{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.cap{font-size:13px;color:var(--mute);margin:0 0 8px 4px}
+.phone{width:360px;border-radius:34px;border:1px solid hsl(222 14% 26%);overflow:hidden;position:relative;box-shadow:0 20px 60px hsl(225 40% 2% / .6)}
+.num{font-family:Outfit,"Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums}
+svg{display:block}
+
+/* ---------- 桌面（共用桌布） ---------- */
+.home{height:640px;padding:44px 12px 0;background:
+  radial-gradient(120% 60% at 20% 0%,hsl(232 40% 22%) 0%,transparent 60%),
+  radial-gradient(90% 50% at 90% 40%,hsl(262 30% 20%) 0%,transparent 60%),
+  linear-gradient(180deg,hsl(228 30% 12%),hsl(236 26% 7%));}
+.home .appgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 0;margin-top:22px;padding:0 6px}
+.home .ic{width:52px;height:52px;border-radius:16px;margin:0 auto;background:hsl(225 16% 22% / .8);border:1px solid hsl(225 16% 32% / .6)}
+.home .lbl{font-size:11px;text-align:center;color:hsl(220 15% 80%);margin-top:6px}
+.hw2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+
+/* ---------- 方案 A：夜空 ---------- */
+.A .w4{padding:14px 16px 12px;color:#fff;text-shadow:0 1px 6px hsl(230 50% 5% / .7)}
+.A .w4 .top{display:flex;justify-content:space-between;font-size:15px}
+.A .w4 .main{display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:end;margin-top:4px}
+.A .w4 .now .t{font-size:50px;font-weight:200;line-height:1}
+.A .w4 .now .hl{font-size:14px;opacity:.9;margin-top:4px}
+.A .w4 .days{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;font-size:13px}
+.A .w4 .days svg{margin:2px auto}
+.A .w4 .tip{margin-top:8px;font-size:12.5px;display:flex;gap:8px;align-items:center;justify-content:center;opacity:.95}
+.A .w2{padding:12px;border-radius:22px;background:hsl(230 30% 14% / .35);backdrop-filter:blur(6px);border:1px solid hsl(220 40% 80% / .12);color:#fff}
+.A .app{background:linear-gradient(180deg,hsl(226 45% 16%),hsl(232 38% 9%) 40%,hsl(236 30% 7%));}
+.A .card{background:hsl(226 40% 22% / .35);border:1px solid hsl(220 50% 80% / .10);border-radius:20px;backdrop-filter:blur(4px)}
+
+/* ---------- 方案 B：石墨網格 ---------- */
+.B .w4{padding:14px 16px;border-radius:24px;background:hsl(220 14% 12% / .92);border:1px solid hsl(220 12% 24%)}
+.B .w4 .top{display:flex;justify-content:space-between;font-size:13px;color:hsl(220 10% 70%)}
+.B .w4 .main{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-top:6px}
+.B .w4 .now .t{font-size:46px;font-weight:300;line-height:1;color:hsl(172 55% 70%)}
+.B .w4 .now .hl{font-size:13px;color:hsl(220 10% 70%);margin-top:4px}
+.B .w4 .days{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;font-size:12px}
+.B .w4 .days>div{background:hsl(220 14% 16%);border-radius:12px;padding:6px 0;border:1px solid hsl(220 12% 22%)}
+.B .w4 .days svg{margin:2px auto}
+.B .w4 .tip{margin-top:10px;font-size:12px;display:flex;gap:6px;flex-wrap:wrap}
+.B .w2{padding:12px;border-radius:24px;background:hsl(220 14% 12% / .92);border:1px solid hsl(220 12% 24%)}
+.B .app{background:hsl(220 14% 8%)}
+.B .card{background:hsl(220 14% 12%);border:1px solid hsl(220 12% 20%);border-radius:18px}
+
+/* ---------- 方案 C：明天優先 ---------- */
+.C .w4{padding:14px 16px;border-radius:26px;background:linear-gradient(135deg,hsl(212 40% 18% / .95),hsl(250 28% 16% / .95));border:1px solid hsl(220 40% 40% / .35)}
+.C .w4 .top{display:flex;justify-content:space-between;font-size:13px;color:hsl(35 70% 75%)}
+.C .w4 .main{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.C .w4 .blk{border-radius:16px;padding:8px 10px;background:hsl(220 30% 10% / .45)}
+.C .w4 .blk .k{font-size:12px;color:hsl(220 14% 70%)}
+.C .w4 .blk .t{font-size:30px;font-weight:300;line-height:1.1}
+.C .w4 .tip{margin-top:10px;font-size:12.5px;display:flex;gap:8px;align-items:center}
+.C .w2{padding:12px;border-radius:26px;background:linear-gradient(135deg,hsl(212 40% 18% / .95),hsl(250 28% 16% / .95));border:1px solid hsl(220 40% 40% / .35)}
+.C .app{background:linear-gradient(180deg,hsl(214 36% 14%),hsl(228 30% 8%) 35%)}
+.C .card{background:hsl(220 26% 13%);border:1px solid hsl(220 24% 22%);border-radius:22px}
+
+/* ---------- APP 共用 ---------- */
+.app{min-height:1200px;overflow:hidden;padding:40px 14px 20px;position:relative}
+.app.scroll{height:auto}
+.stars{position:absolute;inset:0;pointer-events:none;opacity:.55}
+.bar{display:flex;justify-content:space-between;align-items:center;position:relative}
+.chips{display:flex;gap:6px}
+.chip{font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid hsl(220 30% 60% / .35);color:hsl(220 20% 85%)}
+.chip.on{background:hsl(198 60% 40% / .35);border-color:hsl(198 70% 60% / .6);color:#fff}
+.gear{width:34px;height:34px;border-radius:12px;border:1px solid hsl(220 30% 60% / .3);display:grid;place-items:center}
+.card{padding:14px;margin-top:12px;position:relative}
+.ct{font-size:13.5px;font-weight:500;color:hsl(220 18% 80%);display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ct small{font-weight:400;color:var(--mute);font-size:12px}
+.hero{display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:18px;position:relative}
+.hero .t{font-size:84px;font-weight:200;line-height:.95}
+.hero .d{font-size:14px;color:hsl(220 18% 80%);margin-top:6px;line-height:1.6}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px;position:relative}
+.facts div{font-size:11.5px;color:var(--mute);text-align:center;padding:8px 0;border-radius:12px;background:hsl(220 30% 50% / .08);border:1px solid hsl(220 30% 60% / .10)}
+.facts b{display:block;font-size:15px;color:var(--ink);font-weight:500;margin-top:2px}
+.brief{font-size:14px;line-height:1.75;color:hsl(220 20% 90%)}
+.clo{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.clo span{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 10px 6px 7px;border-radius:12px;background:hsl(40 60% 60% / .10);border:1px solid hsl(40 60% 70% / .22);color:hsl(40 70% 85%)}
+.play{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 12px;border-radius:999px;border:1px solid hsl(198 60% 60% / .5);color:hsl(198 70% 80%)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px}
+.week .dn{color:hsl(220 16% 80%)} .week .dd{color:var(--mute);font-size:10.5px}
+.week svg{margin:6px auto}
+.week .rp{color:hsl(205 80% 72%);font-size:11px}
+.week .wc{margin-top:6px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.hourly{overflow:hidden}
+.aqi{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.aqi .lv{font-size:14px;font-weight:500}
+.aqi p{font-size:12.5px;color:var(--mute);line-height:1.6;margin-top:4px}
+.ty{border-color:hsl(14 70% 55% / .55)!important;background:linear-gradient(135deg,hsl(14 60% 30% / .35),hsl(260 30% 18% / .35))!important}
+.ty .tt{font-size:15px;font-weight:700;color:hsl(18 90% 78%)}
+.ty .meta{font-size:12.5px;color:hsl(20 30% 85%);margin-top:4px;line-height:1.6}
+.imp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.imp div{border-radius:12px;padding:8px 10px;background:hsl(230 30% 8% / .4);font-size:12px;color:var(--mute)}
+.imp b{display:block;font-size:13.5px;margin-top:2px}
+.lvl-hi{color:hsl(8 85% 70%)} .lvl-mid{color:hsl(38 90% 68%)} .lvl-lo{color:hsl(150 50% 65%)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .card{margin-top:10px}
+.mini .k{font-size:12px;color:var(--mute)} .mini .v{font-size:26px;font-weight:300;margin-top:4px} .mini .s{font-size:11.5px;color:var(--mute);margin-top:2px}
+.notes{margin-top:34px;border-top:1px solid var(--line);padding-top:18px;color:var(--mute);font-size:13.5px;line-height:1.8;max-width:900px}
+.notes h2{font-size:16px;color:var(--ink);margin-bottom:6px}
+.notes li{margin-left:20px}
+</style>
+</head>
+<body>
+<h1>倬的天氣：版面設計方案</h1>
+<p class="lead">三個方案都包含：桌面 4×2、2×2 小工具與 APP 主畫面。資料是範例（桃園市中壢區，含一個範例颱風）。參考倬給的截圖的資訊架構與操作方式，外觀重新設計。</p>
+<div class="tabs" id="tabs"></div>
+<p class="optdesc" id="optdesc"></p>
+<div id="stage"></div>
+
+<div class="notes">
+  <h2>三個方案共通的規則</h2>
+  <ul>
+    <li>小工具：點左半邊開 APP、點右半邊（未來幾天）開一週預報；有颱風時 4×2 底部那行換成颱風提示。</li>
+    <li>主畫面上方的「目前位置／家／學校」可以切換；晚間播報用的地點會標一個小點。</li>
+    <li>颱風卡只在有颱風時出現，而且排在最上面；空品卡在橘色以上時改用警示外框。</li>
+    <li>每天的穿著圖示來自本機規則（短袖、薄外套、外套、雨傘、口罩、防曬），和播報內容一致。</li>
+    <li>參考截圖裡的廣告、雷達付費區、旅遊推薦都不做。</li>
+  </ul>
+</div>
+
+<script>
+/* ===== 圖示（手繪向量） ===== */
+const sun=(s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><defs><radialGradient id="sg${s}" cx="40%" cy="38%"><stop offset="0" stop-color="hsl(48 100% 76%)"/><stop offset="1" stop-color="hsl(36 95% 55%)"/></radialGradient></defs><g stroke="hsl(42 95% 66%)" stroke-width="2.4" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>`<line x1="24" y1="5" x2="24" y2="9.5" transform="rotate(${a} 24 24)"/>`).join('')}</g><circle cx="24" cy="24" r="10.5" fill="url(#sg${s})"/></svg>`;
+const cloudPath=`<path d="M14 38h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2.5A8.5 8.5 0 0 0 14 38z"/>`;
+const cloud=(s=40,c="hsl(220 25% 88%)")=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><g fill="${c}" stroke="hsl(220 20% 70%)" stroke-width="1">${cloudPath}</g></svg>`;
+const partly=(s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><g transform="translate(-6 -7) scale(.85)">${sun(48).replace(/<\/?svg[^>]*>/g,'')}</g><g fill="hsl(220 30% 94%)" stroke="hsl(220 20% 72%)" stroke-width="1" transform="translate(4 4) scale(.9)">${cloudPath}</g></svg>`;
+const rain=(s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><g fill="hsl(220 18% 78%)" stroke="hsl(220 16% 60%)" stroke-width="1" transform="translate(0 -6)">${cloudPath}</g><g stroke="hsl(205 85% 65%)" stroke-width="2.4" stroke-linecap="round"><line x1="17" y1="36" x2="14.5" y2="42"/><line x1="25" y1="36" x2="22.5" y2="42"/><line x1="33" y1="36" x2="30.5" y2="42"/></g></svg>`;
+const moon=(s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><path d="M30 8a16 16 0 1 0 10 26A13 13 0 0 1 30 8z" fill="hsl(48 70% 82%)"/></svg>`;
+const icon={sun,partly,cloud,rain,moon};
+
+const I=(d,c="currentColor")=>`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const clo={
+  tee:I(`<path d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/>`,"hsl(40 80% 75%)"),
+  jacket:I(`<path d="M8 4l-4 3v13h5V9M16 4l4 3v13h-5V9M8 4c1 1.6 2.4 2.5 4 2.5S15 5.6 16 4M12 6.5V20"/>`,"hsl(28 80% 72%)"),
+  umbrella:I(`<path d="M3 12a9 9 0 0 1 18 0zM12 12v6a2 2 0 0 0 4 0M12 3v0"/>`,"hsl(205 85% 72%)"),
+  mask:I(`<path d="M5 9c3-2 11-2 14 0v5c-2 3-12 3-14 0zM5 10H3v3l2 1M19 10h2v3l-2 1M9 11h6M9 13.5h6"/>`,"hsl(30 90% 70%)"),
+  uv:I(`<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/>`,"hsl(45 90% 70%)"),
+  play:I(`<path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>`,"hsl(198 70% 80%)"),
+  gear:I(`<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 1 1 0 4H21a1.7 1.7 0 0 0-1.6 1z"/>`,"hsl(220 20% 80%)"),
+  storm:I(`<path d="M12 12m-2.5 0a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0M12 4c-5 0-8 3-8 6M12 20c5 0 8-3 8-6M4 10c0 2 1.5 3.5 3 4M20 14c0-2-1.5-3.5-3-4"/>`,"hsl(18 90% 72%)"),
+};
+
+/* ===== 範例資料 ===== */
+const D={
+  town:"中壢區",city:"桃園市",date:"星期二, 11月10",
+  now:{t:19,feel:18,w:"多雲",hi:21,lo:16,hum:82,wind:"東北 3 級",rain3h:30,uv:0,ic:"partly"},
+  tom:{date:"11/11 週三",w:"多雲時晴",feel:[17,24],t:[18,25],rainDay:20,rainNight:40,uv:6,aqi:112},
+  week:[
+    ["週三","11/11","partly",25,19,20,["tee","jacket"]],
+    ["週四","11/12","sun",29,20,10,["tee","uv"]],
+    ["週五","11/13","sun",30,21,10,["tee","uv"]],
+    ["週六","11/14","partly",27,22,30,["tee","umbrella"]],
+    ["週日","11/15","rain",24,19,70,["jacket","umbrella"]],
+    ["週一","11/16","rain",21,17,60,["jacket","umbrella"]],
+    ["週二","11/17","cloud",22,16,20,["jacket"]],
+  ],
+  hours:[["21時",19,20],["00",17,10],["03",16,10],["06",17,10],["09",21,10],["12",24,20],["15",25,30],["18",22,40],["21",20,30]],
+  typhoon:{name:"銀杏（範例）",kind:"中度颱風",pos:"恆春東南方約 620 公里",closest:"11/13（週五）清晨",warn:"海上警報",home:["外圍影響","mid"],school:["可能直接影響","hi"],off:"停班停課尚未公布"},
+};
+const cloLabel={tee:"短袖",jacket:"薄外套",umbrella:"帶傘",mask:"戴口罩",uv:"防曬"};
+
+/* ===== 元件 ===== */
+const starsSvg=()=>{let s='';let x=7;for(let i=0;i<90;i++){x=(x*9301+49297)%233280;const a=x/233280;x=(x*9301+49297)%233280;const b=x/233280;x=(x*9301+49297)%233280;const r=(x/233280)*1.1+.3;s+=`<circle cx="${(a*360).toFixed(1)}" cy="${(b*900).toFixed(1)}" r="${r.toFixed(2)}" fill="#fff" opacity="${(.3+r/2).toFixed(2)}"/>`}return `<svg class="stars" viewBox="0 0 360 900" preserveAspectRatio="xMidYMin slice">${s}</svg>`};
+
+function widget4(v){
+  const d4=D.week.slice(0,4);
+  if(v==="C"){
+    return `<div class="w4"><div class="top"><span>${D.city}${D.town}</span><span>21:00 會播報</span></div>
+    <div class="main">
+      <div class="blk"><div class="k">現在</div><div style="display:flex;align-items:center;gap:6px"><span class="t num">${D.now.t}°</span>${partly(34)}</div><div class="k num">${D.now.hi}° / ${D.now.lo}°</div></div>
+      <div class="blk"><div class="k">明天 · 學校</div><div style="display:flex;align-items:center;gap:6px"><span class="t num">${D.tom.t[1]}°</span>${partly(34)}</div><div class="k num">體感 ${D.tom.feel[0]}–${D.tom.feel[1]}° · 雨 ${D.tom.rainNight}%</div></div>
+    </div>
+    <div class="tip">${clo.tee}${clo.jacket}${clo.umbrella}<span>短袖加薄外套，晚上帶折傘</span></div></div>`;
+  }
+  return `<div class="w4"><div class="top"><span>${D.town}</span><span>${D.date}</span></div>
+  <div class="main"><div class="now"><div style="display:flex;align-items:center;gap:6px"><span class="t num">${D.now.t}°</span>${partly(v==="A"?44:36)}</div><div class="hl num">${D.now.hi}° / ${D.now.lo}°</div></div>
+  <div class="days">${d4.map(d=>`<div><div>${d[0]}</div>${icon[d[2]](v==="A"?38:30)}<div class="num">${d[3]}°</div><div class="num" style="opacity:.6">${d[4]}°</div></div>`).join('')}</div></div>
+  ${v==="A"?`<div class="tip">${clo.storm}<span>銀杏颱風 週五清晨最接近，學校可能進入暴風圈</span></div>`
+          :`<div class="tip"><span class="chip" style="border-color:hsl(30 80% 60%/.6);color:hsl(30 90% 75%)">AQI 112 橘</span><span class="chip">明天 短袖＋薄外套</span><span class="chip" style="border-color:hsl(14 80% 60%/.6);color:hsl(18 90% 78%)">颱風</span></div>`}
+  </div>`;
+}
+function widget2(v){
+  return `<div class="w2"><div style="font-size:12px;opacity:.85">${D.town}</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px"><span class="num" style="font-size:40px;font-weight:${v==="A"?200:300};line-height:1">${D.now.t}°</span>${partly(40)}</div>
+  <div class="num" style="font-size:12px;opacity:.85;margin-top:4px">${D.now.hi}°/${D.now.lo}° · 雨 ${D.now.rain3h}%</div>
+  <div style="display:flex;gap:4px;margin-top:8px;align-items:center;font-size:11.5px;opacity:.9">${clo.tee}${clo.jacket}<span>明天</span></div></div>`;
+}
+function widget2b(v){
+  return `<div class="w2"><div style="font-size:12px;opacity:.85">明天 · 學校</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px"><span class="num" style="font-size:30px;font-weight:300;line-height:1.1">${D.tom.t[0]}–${D.tom.t[1]}°</span></div>
+  <div style="font-size:12px;opacity:.85;margin-top:6px">降雨 ${D.tom.rainDay}% → ${D.tom.rainNight}%</div>
+  <div style="display:flex;gap:4px;margin-top:8px;align-items:center">${clo.tee}${clo.jacket}${clo.umbrella}${clo.mask}</div></div>`;
+}
+function homeScreen(v){
+  const apps=["電話","訊息","相機","相簿","LINE","日曆","語音總控","鬧鐘"];
+  return `<div class="home">${widget4(v)}<div class="hw2">${widget2(v)}${widget2b(v)}</div>
+  <div class="appgrid">${apps.map(a=>`<div><div class="ic"></div><div class="lbl">${a}</div></div>`).join('')}</div></div>`;
+}
+
+function hourlyChart(){
+  const W=340,H=150,p=16,n=D.hours.length,step=(W-2*p)/(n-1);
+  const ts=D.hours.map(h=>h[1]),mx=Math.max(...ts),mn=Math.min(...ts);
+  const y=t=>30+(mx-t)/(mx-mn)*55;
+  const pts=D.hours.map((h,i)=>[p+i*step,y(h[1])]);
+  const path=pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ');
+  return `<div class="hourly"><svg viewBox="0 0 ${W} ${H}" width="100%">
+   <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(38 90% 65%)" stop-opacity=".35"/><stop offset="1" stop-color="hsl(38 90% 65%)" stop-opacity="0"/></linearGradient></defs>
+   <path d="${path} L ${pts.at(-1)[0]} 100 L ${p} 100 Z" fill="url(#hg)"/>
+   <path d="${path}" fill="none" stroke="hsl(38 90% 68%)" stroke-width="2.4"/>
+   ${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="2.6" fill="hsl(38 90% 75%)"/><text x="${q[0]}" y="${q[1]-8}" fill="hsl(220 20% 90%)" font-size="13" text-anchor="middle" font-family="Outfit">${D.hours[i][1]}°</text>
+    <rect x="${q[0]-6}" y="${132-D.hours[i][2]*.4}" width="12" height="${D.hours[i][2]*.4+2}" rx="3" fill="hsl(205 80% 62%)" opacity=".75"/>
+    <text x="${q[0]}" y="${146}" fill="hsl(220 12% 62%)" font-size="11.5" text-anchor="middle" font-family="Outfit">${D.hours[i][0]}</text>`).join('')}
+  </svg></div>`;
+}
+function aqiGauge(v=112){
+  const a=Math.min(v,300)/300*180, r=36, cx=44, cy=44;
+  const rad=d=>(180-d)*Math.PI/180;const ex=cx+r*Math.cos(rad(a)),ey=cy-r*Math.sin(rad(a));
+  return `<svg width="88" height="56" viewBox="0 0 88 56"><path d="M8 44a36 36 0 0 1 72 0" fill="none" stroke="hsl(220 20% 30%)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M8 44A36 36 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}" fill="none" stroke="hsl(30 90% 60%)" stroke-width="8" stroke-linecap="round"/>
+  <text x="44" y="44" text-anchor="middle" fill="hsl(30 95% 75%)" font-size="20" font-family="Outfit">${v}</text></svg>`;
+}
+
+function typhoonCard(){
+  const t=D.typhoon;
+  return `<div class="card ty"><div class="ct"><span style="display:flex;gap:6px;align-items:center">${clo.storm}<span class="tt">${t.name} · ${t.kind}</span></span><small>${t.warn}</small></div>
+  <div class="meta">${t.pos}，預估 <b style="color:#fff">${t.closest}</b> 最接近台灣<br>路徑還可能改變，每 3～6 小時更新</div>
+  <div class="imp"><div>家<b class="lvl-${t.home[1]}">${t.home[0]}</b></div><div>學校<b class="lvl-${t.school[1]}">${t.school[0]}</b></div></div>
+  <div class="meta" style="margin-top:8px">人事總處：${t.off}</div></div>`;
+}
+function tomorrowCard(big){
+  const t=D.tom;
+  return `<div class="card"><div class="ct"><span>明天 ${t.date} · 學校</span><span class="play">${clo.play}唸給我聽</span></div>
+  ${big?`<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">${partly(64)}<div><div class="num" style="font-size:40px;font-weight:200;line-height:1">${t.t[0]}–${t.t[1]}°</div><div style="font-size:13px;color:var(--mute)">${t.w} · 體感 ${t.feel[0]}–${t.feel[1]}°</div></div></div>`:''}
+  <p class="brief">白天${t.w}，體感 ${t.feel[0]} 到 ${t.feel[1]} 度，晚上降雨機率 ${t.rainNight}%。早晚溫差大，建議短袖加薄外套，晚上帶把折傘。空氣品質橘色，外出戴口罩。</p>
+  <div class="clo"><span>${clo.tee}短袖</span><span>${clo.jacket}薄外套</span><span>${clo.umbrella}折傘</span><span>${clo.mask}口罩</span></div></div>`;
+}
+function weekCard(){
+  return `<div class="card"><div class="ct"><span>7 日預報</span><small>每天的穿著建議</small></div>
+  <div class="week">${D.week.map(d=>`<div><div class="dn">${d[0]}</div><div class="dd num">${d[1]}</div>${icon[d[2]](30)}<div class="num">${d[3]}°</div><div class="num" style="color:var(--mute)">${d[4]}°</div><div class="rp num">${d[5]}%</div><div class="wc">${d[6].map(k=>clo[k]).join('')}</div></div>`).join('')}</div></div>`;
+}
+function hero(v){
+  const n=D.now;
+  return `<div class="hero"><div><div class="t num">${n.t}°</div><div class="d">${n.w} · 體感 ${n.feel}°<br><span class="num">${n.hi}° / ${n.lo}°</span></div></div>${partly(v==="A"?120:96)}</div>
+  <div class="facts"><div>濕度<b class="num">${n.hum}%</b></div><div>風<b>東北 3</b></div><div>3 小時雨<b class="num">${n.rain3h}%</b></div><div>紫外線<b class="num">${n.uv}</b></div></div>`;
+}
+function bar(){
+  return `<div class="bar"><div class="chips"><span class="chip on">目前位置</span><span class="chip">家</span><span class="chip">學校 ●</span></div><div class="gear">${clo.gear}</div></div>`;
+}
+function aqiCard(){
+  return `<div class="card" style="border-color:hsl(30 80% 55% / .45)"><div class="ct"><span>空氣品質</span><small>中壢測站 · 20:00</small></div>
+  <div class="aqi">${aqiGauge(112)}<div><div class="lv" style="color:hsl(30 90% 72%)">對敏感族群不健康（橘）</div><p>PM2.5 34 μg/m³。明天北部空品區預報 AQI 105，出門建議戴口罩。</p></div></div></div>`;
+}
+function minis(){
+  return `<div class="grid2">
+   <div class="card mini"><div class="k">紫外線（明天）</div><div class="v num">6</div><div class="s">高量級，中午防曬</div></div>
+   <div class="card mini"><div class="k">風</div><div class="v">東北 3 級</div><div class="s num">陣風 6 級 · 4.2 m/s</div></div>
+   <div class="card mini"><div class="k">日出／日落</div><div class="v num" style="font-size:22px">06:12 / 17:08</div><div class="s">白天 10 小時 56 分</div></div>
+   <div class="card mini"><div class="k">舒適度</div><div class="v">稍有涼意</div><div class="s num">露點 15°</div></div>
+  </div>`;
+}
+function appScreen(v){
+  let body='';
+  if(v==="A") body=bar()+hero(v)+typhoonCard()+tomorrowCard(false)+weekCard()+`<div class="card"><div class="ct"><span>逐時</span><small>溫度與降雨機率</small></div>${hourlyChart()}</div>`+aqiCard()+minis();
+  if(v==="B") body=bar()+`<div class="grid2" style="margin-top:6px"><div class="card" style="grid-column:span 2">${hero(v)}</div></div>`+typhoonCard()+`<div class="grid2">${['今天','明天'].map((k,i)=>`<div class="card mini"><div class="k">${k}${i?' · 學校':''}</div><div style="display:flex;align-items:center;justify-content:space-between">${i?`<span class="v num">${D.tom.t[0]}–${D.tom.t[1]}°</span>`:`<span class="v num">${D.now.lo}–${D.now.hi}°</span>`}${partly(36)}</div><div class="s">${i?'雨 20→40% · 薄外套＋傘':'雨 30% · 短袖'}</div></div>`).join('')}</div>`+weekCard()+`<div class="card"><div class="ct"><span>逐時</span></div>${hourlyChart()}</div>`+aqiCard()+minis();
+  if(v==="C") body=bar()+tomorrowCard(true)+typhoonCard()+`<div class="card"><div class="ct"><span>現在 · ${D.town}</span><small>20:40 更新</small></div><div style="display:flex;align-items:center;justify-content:space-between"><div><span class="num" style="font-size:46px;font-weight:200">${D.now.t}°</span> <span style="color:var(--mute);font-size:13px">${D.now.w} · 體感 ${D.now.feel}°</span></div>${partly(54)}</div>${hourlyChart()}</div>`+weekCard()+aqiCard()+minis();
+  return `<div class="app">${v==="A"?starsSvg():''}<div style="position:relative">${body}</div></div>`;
+}
+
+const OPT={
+  A:{name:"方案 A：夜空",desc:"<b>最接近你給的截圖的感覺。</b>桌面小工具是透明的，字直接疊在桌布上，像截圖那樣：左邊是目前溫度，右邊 4 天；底下一行放颱風或空品提醒。APP 用深藍夜空漸層加星點，卡片半透明。排列順序沿用截圖：現在 → 颱風（有才出現）→ 明天播報 → 7 日（含每天的穿著圖示）→ 逐時 → 空品 → 其他。"},
+  B:{name:"方案 B：石墨網格",desc:"<b>資訊密度最高。</b>小工具有實心底色，桌布再花也看得清楚；4 天各自一格，底下用標籤放 AQI、明天穿著、颱風。APP 用石墨灰色兩欄網格，今天和明天並排比較，青綠色當重點色。適合想一眼看完、不太滑動的用法。"},
+  C:{name:"方案 C：明天優先",desc:"<b>以晚間播報為主軸。</b>小工具左右兩塊：左邊現在、右邊明天（依明天上不上班顯示學校或家），底下是明天的穿著圖示和一句建議。APP 第一張卡就是明天的播報內容，附「唸給我聽」按鈕，接著才是颱風、現在、逐時和 7 日。藍紫漸層，琥珀色點綴。"},
+};
+function render(v){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.getElementById('optdesc').innerHTML=OPT[v].desc;
+  document.getElementById('stage').innerHTML=`<div class="row ${v}">
+    <div><p class="cap">桌面：4×2 ＋ 兩個 2×2</p><div class="phone">${homeScreen(v)}</div></div>
+    <div><p class="cap">APP 主畫面（颱風期間）</p><div class="phone">${appScreen(v)}</div></div></div>`;
+}
+document.getElementById('tabs').innerHTML=Object.keys(OPT).map(k=>`<button data-v="${k}">${OPT[k].name}</button>`).join('');
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{render(b.dataset.v);try{history.replaceState(null,'','#opt-'+b.dataset.v.toLowerCase())}catch(e){}});
+const h=(location.hash||'').replace('#opt-','').toUpperCase();
+render(OPT[h]?h:'A');
+</script>
+</body>
+</html>
