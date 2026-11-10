@@ -8,7 +8,7 @@
 
 ## 目前階段
 
-第 1 階段意圖訪談：`docs/FEATURES.md` 草案等倬確認。**確認前不寫功能程式**（依 hoonsor-android-app SOP）。
+第 5 階段分版實作。FEATURES（F01～F23）、AGENT_API、DESIGN 都已由倬確認（2026-11-10）。版本計畫見 `PROJECT_STATUS.md`。
 
 ## 關鍵設計決策＋原因
 
@@ -22,9 +22,31 @@
 | 播報地點依「明天要不要上班」決定（上班日唸學校，其他唸家／目前位置） | 晚上人在家，但明天白天在學校 |
 | 家、學校地點只存在 APP 設定，不進 repo | 個資（住址） |
 
-## 技術棧（依 SOP 標準骨架，第 4 階段建立）
+## 技術棧
 
-Kotlin、minSdk 30／targetSdk 35、Compose＋M3、Jetpack Glance（小工具）、WorkManager（背景更新）、套件名 `tw.hoonsor.weather`、正式版＋LAB 版、共用簽章、GitHub Actions 編譯、共用 SDK `HoonsorAgent.kt`。
+Kotlin、minSdk 30／targetSdk 35、Compose＋M3、Jetpack Glance（小工具）、WorkManager（背景更新）、套件名 `tw.hoonsor.weather`、正式版＋LAB 版、共用簽章、GitHub Actions 編譯、共用 SDK `HoonsorAgent.kt`。不用 Room（資料量小，快取用 JSON 檔）、不用 Google Play 定位服務（用系統 LocationManager）。
+
+## 建置與測試
+
+```powershell
+$env:JAVA_HOME="C:\Users\hoonsor\.jdks\jbr-21.0.11"; .\gradlew.bat testProdDebugUnitTest assembleProdDebug assembleLabDebug
+```
+- 不要用 Android Studio 內附的 JBR 25（Gradle 8.11 不支援）；`local.properties` 只在本機（指向 Android SDK），不進 Git
+- CI：`.github/workflows/build.yml`（相容檢查 → 單元測試 → 正式版＋LAB 版；main → latest、vX.Y.Z tag → Release）；共用簽章由 Secrets 提供
+- 改了 Agent API 動作：同步 `agent/WeatherAgentCatalog.kt`、`docs/agent-manifest.json`（ManifestTest 會比對，`status`／`version` 不比）、`docs/AGENT_API.md`、語音總控 `docs/manual/MANUAL.md`
+
+## 目錄
+
+```
+app/src/main/java/
+├─ tw/hoonsor/agent/HoonsorAgent.kt   共用 Agent SDK（從語音總控複製，不要在這裡改）
+└─ tw/hoonsor/weather/
+   ├─ domain/   純邏輯（不 import android）：Models、Clothing（F06）、TyphoonImpact（F11）、Workday（F07/F08）、Broadcast（播報句）、Aqi、WeatherIcon
+   ├─ agent/    WeatherAgentCatalog（describe 清單）；AgentProvider 在 v0.5 加
+   └─ ui/       MainActivity（v0.1 骨架畫面）、Sample（範例資料）、theme/Palette（色票照 docs/DESIGN.md）
+app/src/test/   JVM 測試：穿著、颱風、辦公日曆、播報句、manifest 一致性
+docs/           FEATURES、DATA_SOURCES、AGENT_API、agent-manifest.json、DESIGN、design/mockups.html
+```
 
 ## 絕對不要重踩的坑
 

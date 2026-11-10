@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 色票唯一來源是 docs/DESIGN.md 第 2 節；這裡只放系統層（視窗底色、圖示底）要用的 -->
+<resources>
+    <color name="bg">#FF0E1222</color>
+    <color name="icon_bg">#FF16203B</color>
+</resources>
