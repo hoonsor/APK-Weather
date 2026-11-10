@@ -6,9 +6,9 @@ v0.0.0（只有文件，尚無程式）
 
 ## 任務
 
-- [ ] 第 1 階段：意圖訪談，`docs/FEATURES.md` 倬確認（草案已完成）
-- [ ] 第 2 階段：查證資料集代碼與欄位；`docs/AGENT_API.md`、`docs/agent-manifest.json`（規劃版）；語音總控 MANUAL.md 新增一章
-- [ ] 第 3 階段：Claude Design 版面 2～3 案（小工具 2×2／4×2、主畫面、颱風卡、設定、健康檢查）→ `docs/DESIGN.md`
+- [x] 第 1 階段：`docs/FEATURES.md` 倬 2026-11-10 全部確認
+- [x] 第 2 階段：`docs/DATA_SOURCES.md` 查證、`docs/AGENT_API.md`、`docs/agent-manifest.json`（規劃版，9 個動作）；語音總控 MANUAL.md 已收錄（APK-VoiceHub 808ad03，已 push）
+- [ ] 第 3 階段：三個方案已做（`docs/design/mockups.html`，claude.ai artifact「倬的天氣：版面設計方案」），等倬選定後寫 `docs/DESIGN.md`，再補設定與健康檢查頁
 - [ ] 第 4 階段：骨架（請倬建立 GitHub repo `hoonsor/APK-Weather`、加入共用簽章腳本清單）
 - [ ] 第 5 階段：分版實作
 - [ ] 第 6 階段：交付
@@ -35,8 +35,8 @@ v0.0.0（只有文件，尚無程式）
 
 ## 下一步
 
-1. 倬確認 `docs/FEATURES.md`（特別是「建議（未確認）」的 F08、F13、F18、F19，以及 F04 常用地點）。
-2. 確認後進第 2 階段：上網查證氣象署、環境部、人事總處的資料集代碼、欄位與限制，寫 `docs/AGENT_API.md`。
+1. 倬從方案 A（夜空）、B（石墨網格）、C（明天優先）選一個或混搭，參考圖是倬目前用的天氣 APP 截圖。
+2. 定案後寫 `docs/DESIGN.md`（唯一色票），補設定頁、健康檢查頁版面，進第 4 階段骨架（請倬建 GitHub repo、加入共用簽章腳本清單、申請氣象署與環境部金鑰）。
 
 ## 交接紀錄
 
