@@ -63,7 +63,10 @@ docs/           FEATURES、DATA_SOURCES、AGENT_API、agent-manifest.json、DESI
 - 桌面小工具不能偵測滑動手勢（Glance／RemoteViews 只有點擊）；4×1 的 A／C 版面切換用右側圓點的點擊（actionRunCallback 改該 widget 的 Glance state），每個 widget id 各自記住版面
 - 小工具內容只能由 `WeatherWidgets.pushAll()` 寫進 Glance 狀態（provideContent 不會自己讀檔）；圖示必須是 `res/drawable` 的 XML，由 `python tools/gen_drawables.py app/src/main/res/drawable` 產生（改圖示或色票改這支腳本再重跑）；Glance 一個 Row／Column 最多 10 個子元件
 - ContentProvider 比 Application.onCreate 早建立：`AgentProvider.onCreate` 自己呼叫 `Graph.init`
-- 氣象署、颱風、空品的 JSON 鍵名還沒用實際資料核對（DATA_SOURCES.md「未確認」）：解析一律走 `J` 寬鬆讀取；設定頁「測試」按鈕會說「連線成功但解析不到」，看到就要用實際回應修 *Parse 並更新 ParsersTest 的範例
+- 資料格式已用 2026-11-11 的實際回應核對，存在 `app/src/test/resources/real/`，`RealDataTest` 比對。來源改格式時：設定頁「測試」會說「連線成功但解析不到」，就重抓一份實際回應換掉測試資料再修 *Parse（授權碼只在網址，不能存進檔案）
+- 開發用授權碼在 `.env`（dotenvx 加密：`CWA_API_KEY`、`MOENV_API_KEY`），用 `dotenvx run -f .env -- <指令>` 帶進去；`.env`、`.env.keys` 已在 .gitignore
+- 颱風路徑 W-C0034-005 會列出整個西北太平洋的颱風，只留離台灣 1000 公里內的（`TyphoonParse.relevant`）；警報 W-C0034-001 沒有警報時也會回「解除颱風警報」，要看 urgency
+- 停班停課只用人事總處網頁：NCDR RSS 要登入會員
 - `HoonsorAgent.PERMISSION` 是權限名稱字串，錯誤碼要用 `HoonsorAgent.PERMISSION_DENIED`
 - API 授權碼（氣象署、環境部）用 Keystore 加密存在手機；開發用值走 dotenvx，絕不寫進 repo
 

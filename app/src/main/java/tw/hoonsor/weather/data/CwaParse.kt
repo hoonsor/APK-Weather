@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 /**
  * 中央氣象署鄉鎮預報（F-D0047-093，locationId 帶「3 天」與「1 週」兩個資料集）解析。
  * 結構依 DATA_SOURCES.md 第 1 節：Locations → LocationsName → Location → WeatherElement(ElementName) → Time → ElementValue。
- * 鍵名大小寫用 [J] 寬鬆比對；拿到授權碼後要用實際資料核對一次（PROJECT_STATUS「待實機驗證」）。
+ * 鍵名大小寫用 [J] 寬鬆比對；2026-11-11 已用實際回應核對（測試資料 src/test/resources/real/cwa_093.json）。
  */
 object CwaParse {
     /** 縣市 → (3 天, 1 週) 資料集代碼。單號 3 天、雙號 1 週 */
@@ -104,6 +104,14 @@ object CwaParse {
         list.firstOrNull { val s = it.start; val e = it.end; s != null && e != null && !t.isBefore(s) && t.isBefore(e) }
             ?: list.firstOrNull { it.at == t }
 
+    /**
+     * 逐時點（DataTime）用：同一時間的值，沒有就用 3 小時內最近的前一筆。
+     * 實際資料：溫度、體感、濕度、舒適度前段逐 1 小時；風速、風向逐 3 小時（2026-11-11 核對）。
+     */
+    private fun atOrBefore(list: List<Period>, t: LocalDateTime): Period? =
+        list.firstOrNull { it.at == t } ?: covering(list, t)
+            ?: list.filter { val a = it.at; a != null && !a.isAfter(t) && a.isAfter(t.minusHours(3)) }.maxByOrNull { it.at!! }
+
     private fun hours(els: Map<String, List<Period>>): List<HourPoint> {
         val temps = get(els, "temp")
         val feels = get(els, "feels")
@@ -119,14 +127,14 @@ object CwaParse {
             val w = covering(wx, t)
             HourPoint(
                 time = t, temp = temp,
-                feels = feels.firstOrNull { it.at == t }?.let { value(it, "ApparentTemperature")?.toDoubleOrNull()?.let { v -> Math.round(v).toInt() } },
+                feels = atOrBefore(feels, t)?.let { value(it, "ApparentTemperature")?.toDoubleOrNull()?.let { v -> Math.round(v).toInt() } },
                 rain = covering(rain, t)?.let { value(it, "ProbabilityOfPrecipitation")?.toIntOrNull() },
                 code = w?.let { value(it, "WeatherCode")?.toIntOrNull() } ?: 0,
                 weather = w?.let { J.str(it.v, "Weather") } ?: "",
-                humidity = rh.firstOrNull { it.at == t }?.let { value(it, "RelativeHumidity")?.toIntOrNull() },
-                beaufort = (ws.firstOrNull { it.at == t } ?: covering(ws, t))?.let { J.str(it.v, "BeaufortScale")?.filter { c -> c.isDigit() }?.take(2)?.toIntOrNull() },
-                windDir = (wd.firstOrNull { it.at == t } ?: covering(wd, t))?.let { J.str(it.v, "WindDirection") },
-                comfort = (ci.firstOrNull { it.at == t } ?: covering(ci, t))?.let { J.str(it.v, "ComfortIndexDescription") },
+                humidity = atOrBefore(rh, t)?.let { value(it, "RelativeHumidity")?.toIntOrNull() },
+                beaufort = atOrBefore(ws, t)?.let { J.str(it.v, "BeaufortScale")?.filter { c -> c.isDigit() }?.take(2)?.toIntOrNull() },
+                windDir = atOrBefore(wd, t)?.let { J.str(it.v, "WindDirection") },
+                comfort = atOrBefore(ci, t)?.let { J.str(it.v, "ComfortIndexDescription") },
             )
         }.sortedBy { it.time }
     }

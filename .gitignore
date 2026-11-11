@@ -10,3 +10,7 @@ _trash/
 *.jks
 *.keystore
 *.p12
+
+# dotenvx（開發用授權碼，加密；金鑰檔絕不進 repo）
+.env
+.env.keys

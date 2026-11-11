@@ -205,7 +205,7 @@ class Repository(
         val oldAt = old?.optString("at")?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() }
         if (old != null && oldAt != null && java.time.Duration.between(oldAt, LocalDateTime.now()).toMinutes() < maxAgeMin) return readTyphoon(old)
         return try {
-            val raws = TyphoonParse.parse(sources.cwaTyphoonTrack(key))
+            val raws = TyphoonParse.parse(sources.cwaTyphoonTrack(key)).filter(TyphoonParse::relevant)
             val (warning, land) = if (raws.isEmpty()) Typhoon.Warning.NONE to emptySet() else runCatching { TyphoonParse.warning(sources.cwaTyphoonWarning(key)) }.getOrDefault(Typhoon.Warning.NONE to emptySet())
             val list = raws.map { Typhoon(it.name, TyphoonParse.kind(it.maxWind), TyphoonParse.describe(it.lat, it.lon), it.track, warning, land) }
             val o = JSONObject().put("at", LocalDateTime.now().toString()).put("list", JSONArray(list.map(SnapshotJson::typhoon)))
@@ -220,12 +220,12 @@ class Repository(
         J.objs(o.optJSONArray("list")).map(SnapshotJson::typhoon), runCatching { LocalDateTime.parse(o.getString("at")) }.getOrNull(), available = true,
     )
 
-    /** 停班停課：縣市 → 公告文字。NCDR 為主，人事總處補 */
-    suspend fun offWork(): Map<String, String> {
-        val a = runCatching { cachedText("offwork_ncdr", 20) { sources.ncdrOffWork() }?.let(OffWorkParse::ncdr) }.getOrNull().orEmpty()
-        val b = runCatching { cachedText("offwork_dgpa", 20) { sources.dgpaOffWork() }?.let(OffWorkParse::dgpa) }.getOrNull().orEmpty()
-        return b + a
-    }
+    /**
+     * 停班停課：縣市 → 公告文字，來源人事總處 nds.html。
+     * NCDR Atom 原本是主來源，2026-11-11 核對時要「先登入會員」才拿得到，改成不用（解析器保留）。
+     */
+    suspend fun offWork(): Map<String, String> =
+        runCatching { cachedText("offwork_dgpa", 20) { sources.dgpaOffWork() }?.let(OffWorkParse::dgpa) }.getOrNull().orEmpty()
 
     /** 家、學校（或目前位置）的颱風影響；明天上班時學校排前面 */
     suspend fun impactPlaces(t: Typhoon): List<Triple<String, Town, TyphoonImpact.Result>> {

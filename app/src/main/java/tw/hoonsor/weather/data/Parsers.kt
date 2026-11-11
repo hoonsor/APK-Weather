@@ -113,13 +113,19 @@ object MoenvParse {
         else -> "北部"
     }
 
-    /** 某空品區某天的預報 AQI；同一天有多次發布時用最新一筆 */
+    /**
+     * 某空品區某天的預報 AQI。實際資料（2026-11-11 核對）：一天可能分「上午／下午」等 timeperiod 好幾筆，
+     * 而且同一天會被發布好幾次。取最新一次發布裡最差（最高）的 AQI。
+     */
     fun forecast(json: String, county: String, date: LocalDate): AirReading? {
         val area = areaOf(county)
-        return records(json).filter { r ->
+        val hits = records(json).filter { r ->
             (J.str(r, "area", "Area") ?: "").contains(area) && J.str(r, "forecastdate", "ForecastDate")?.take(10)?.replace('/', '-') == date.toString()
-        }.maxByOrNull { J.str(it, "publishtime", "PublishTime") ?: "" }
-            ?.let { r -> J.int(r, "aqi", "AQI")?.let { AirReading(it, null, "${area}空品區", isForecast = true) } }
+        }
+        val latest = hits.maxOfOrNull { J.str(it, "publishtime", "PublishTime") ?: "" } ?: return null
+        return hits.filter { (J.str(it, "publishtime", "PublishTime") ?: "") == latest }
+            .mapNotNull { J.int(it, "aqi", "AQI") }.maxOrNull()
+            ?.let { AirReading(it, null, "${area}空品區", isForecast = true) }
     }
 }
 
@@ -183,9 +189,26 @@ object TyphoonParse {
         else -> "強烈颱風"
     }
 
-    /** 警報：整份文字判斷海上／海上陸上；陸上警報的縣市取自 areaDesc（找不到就用全文） */
+    /** 離台灣多近才算「有颱風」（目前位置或任一預報點）：遠在日本東方的颱風不顯示、不播報 */
+    const val RELEVANT_KM = 1000.0
+
+    fun relevant(r: Raw): Boolean {
+        val pts = listOf(r.lat to r.lon) + r.track.map { it.lat to it.lon }
+        return pts.any { (la, lo) -> TyphoonImpact.distanceKm(la, lo, 23.7, 121.0) <= RELEVANT_KM }
+    }
+
+    /**
+     * 警報：看標題（headline／alert_title）判斷海上／海上陸上；陸上警報的縣市取自 areaDesc。
+     * 實際資料（2026-11-11 核對，CAP 格式）：沒有警報時仍會回最後一則「解除颱風警報」，urgency 是 Past。
+     */
     fun warning(json: String): Pair<Typhoon.Warning, Set<String>> {
-        val text = json
+        val root = runCatching { JSONObject(json) }.getOrNull()
+        val infos = root?.let { r -> J.findObjects(r) { J.key(it, "headline") != null || J.key(it, "areaDesc") != null && J.key(it, "event") != null } }.orEmpty()
+        if (infos.isNotEmpty() && infos.all { J.str(it, "urgency")?.equals("Past", true) == true }) return Typhoon.Warning.NONE to emptySet()
+        val titles = infos.flatMap { o ->
+            listOfNotNull(J.str(o, "headline")) + J.objs(J.arr(o, "parameter")).filter { J.str(it, "valueName") == "alert_title" }.mapNotNull { J.str(it, "value") }
+        }
+        val text = if (titles.isEmpty()) json else titles.joinToString(" ")
         val level = when {
             Regex("海上陸上颱風警報").containsMatchIn(text) && !Regex("解除海上陸上颱風警報").containsMatchIn(text) -> Typhoon.Warning.SEA_LAND
             Regex("海上颱風警報").containsMatchIn(text) && !Regex("解除海上颱風警報").containsMatchIn(text) -> Typhoon.Warning.SEA
@@ -217,7 +240,10 @@ object TyphoonParse {
     }
 }
 
-/** 停班停課（F13）：NCDR CAP Atom（AlertType=33）為主、人事總處網頁表格為備援 */
+/**
+ * 停班停課（F13）：人事總處網頁表格（實際使用）；NCDR CAP Atom 解析器保留備用（2026-11-11 起要登入會員，沒在用）。
+ * 人事總處沒有消息時只有一列合併儲存格「無停班停課訊息」，cells < 2 會被略過。
+ */
 object OffWorkParse {
     private fun clean(s: String) = s.replace(Regex("<!\\[CDATA\\[|]]>"), "").replace(Regex("<[^>]+>"), " ")
         .replace("&nbsp;", " ").replace("&amp;", "&").replace(Regex("\\s+"), " ").trim()

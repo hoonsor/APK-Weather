@@ -1,6 +1,6 @@
 # Agent API：倬的天氣（tw.hoonsor.weather）
 
-> 狀態：**已實作**（v0.6.0，9 個動作；`agent/AgentProvider.kt`）。資料來源欄位要等授權碼到手後用實際資料核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
+> 狀態：**已實作**（v0.6.1，9 個動作；`agent/AgentProvider.kt`）。資料來源欄位已在 2026-11-11 用實際回應核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
 > 機器可讀版：`docs/agent-manifest.json`（實作後與 `describe` 回傳完全一致，JVM 測試比對）。
 
 ## 動作總覽

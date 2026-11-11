@@ -72,11 +72,29 @@ class Sources(private val http: OkHttpClient = defaultClient) {
     }
 
     suspend fun calendarIndex() = get("政府資料開放平臺", "https://data.gov.tw/api/v2/rest/dataset/14718".toHttpUrl())
-    suspend fun download(name: String, url: String) = get(name, url.toHttpUrl())
+    /** 下載文字檔。辦公日曆 CSV 有 UTF-8 也有 Big5（114 年修正檔），不是合法 UTF-8 就改用 Big5 解碼 */
+    suspend fun download(name: String, url: String): String = withContext(Dispatchers.IO) {
+        val req = Request.Builder().url(url.toHttpUrl()).header("User-Agent", "HoonsorWeather/1 (Android)").build()
+        try {
+            http.newCall(req).execute().use { r ->
+                if (!r.isSuccessful) throw SourceException(name, r.code, "$name 回應 ${r.code}")
+                decodeText(r.body?.bytes() ?: throw SourceException(name, r.code, "$name 沒有內容"))
+            }
+        } catch (e: SourceException) { throw e } catch (e: IOException) {
+            throw SourceException(name, null, "$name 連不上（${e.javaClass.simpleName}）")
+        }
+    }
     suspend fun ncdrOffWork() = get("停班停課（NCDR）", "https://alerts.ncdr.nat.gov.tw/RssAtomFeed.ashx?AlertType=33".toHttpUrl())
     suspend fun dgpaOffWork() = get("停班停課（人事總處）", "https://www.dgpa.gov.tw/typh/daily/nds.html".toHttpUrl())
 
     companion object {
+        fun decodeText(b: ByteArray): String = try {
+            Charsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(b)).toString()
+        } catch (e: java.nio.charset.CharacterCodingException) {
+            String(b, charset("Big5"))
+        }
+
         val defaultClient: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS).callTimeout(14, TimeUnit.SECONDS).build()
     }

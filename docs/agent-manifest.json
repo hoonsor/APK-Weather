@@ -2,7 +2,7 @@
   "api": 1,
   "app": "倬的天氣",
   "package": "tw.hoonsor.weather",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "台灣天氣、穿著建議、空氣品質警戒、颱風對家與學校的影響。資料來自中央氣象署與環境部，判斷在手機上用規則完成。",
   "actions": [
     {
