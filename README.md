@@ -12,7 +12,9 @@
 
 ## 安裝與首次設定
 
-1. 下載 APK 安裝（新功能先裝 LAB 版）。
+1. 下載 APK 安裝（新功能先裝 LAB 版）：
+   - 正式版：https://github.com/hoonsor/APK-Weather/releases/download/latest/Weather-latest.apk
+   - LAB 版：https://github.com/hoonsor/APK-Weather/releases/download/latest/Weather-LAB-latest.apk
 2. 打開 APP，允許定位（建議選「一律允許」，小工具才會跟著位置更新）。
 3. 設定頁填家、學校所在的鄉鎮，以及氣象署授權碼、環境部金鑰（各有測試按鈕）。
 4. 照健康檢查頁的指示，在 ColorOS 打開「自啟動」「關聯啟動」，電池設成「不限制」。
