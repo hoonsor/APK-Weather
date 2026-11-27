@@ -29,6 +29,13 @@ class BroadcastTest {
         assertEquals("明天 11 月 11 日星期三，學校在中壢區，白天多雲時晴，體感 17 到 24 度，晚上降雨機率 40%。建議短袖加薄外套，晚上帶把折傘。", s)
     }
 
+    @Test fun tomorrowSentenceForNamedPlace() {
+        // v0.10.0 placeName：自訂地點唸「阿嬤家在西屯區」
+        val d = DayForecast(LocalDate.of(2026, 11, 11), "多雲時晴", 3, 18, 25, 17, 24, 20, 40, 6, 3)
+        val s = Broadcast.tomorrow(d, PlaceKind.CURRENT, Town("臺中市", "西屯區", 24.18, 120.62), ClothingRules.advise(d), "阿嬤家在西屯區")
+        assertEquals("明天 11 月 11 日星期三，阿嬤家在西屯區，白天多雲時晴，體感 17 到 24 度，晚上降雨機率 40%。建議短袖加薄外套，晚上帶把折傘。", s)
+    }
+
     private fun hour(t: LocalDateTime, temp: Int, rain: Int?, w: String = "多雲") = tw.hoonsor.weather.domain.HourPoint(t, temp, temp - 1, rain, 2, w)
 
     @Test fun todayRestUsesRemainingHours() {

@@ -54,12 +54,12 @@ class AgentProvider : HoonsorAgentProvider() {
         try {
             when (request.action) {
                 "weather_tomorrow" -> ok(repo.tomorrowReport(p.optString("place", "auto").ifBlank { "auto" },
-                    p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon)))
+                    p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon), name(p)))
                 "weather_today" -> ok(repo.todayReport(p.optString("place", "auto").ifBlank { "auto" },
-                    p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon)))
-                "weather_now" -> ok(repo.nowReport(p.optString("place").ifBlank { null }))
-                "weather_week" -> ok(repo.weekReport(p.optString("place").ifBlank { null }))
-                "air_quality" -> ok(repo.airReport(p.optString("place").ifBlank { null }, p.optString("day").ifBlank { null }))
+                    p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon), name(p)))
+                "weather_now" -> ok(repo.nowReport(p.optString("place").ifBlank { null }, name(p)))
+                "weather_week" -> ok(repo.weekReport(p.optString("place").ifBlank { null }, name(p)))
+                "air_quality" -> ok(repo.airReport(p.optString("place").ifBlank { null }, p.optString("day").ifBlank { null }, name(p)))
                 "typhoon_status" -> ok(repo.typhoonReport())
                 "place_list" -> ok(repo.placeListReport())
                 "place_set" -> placeSet(p, request.dryRun)
@@ -85,6 +85,9 @@ class AgentProvider : HoonsorAgentProvider() {
     }
 
     private fun ok(r: Report) = HoonsorAgent.ok(r.summary, r.data)
+
+    /** placeName（v0.10.0）：設定頁的地點名稱，有給就優先於 place */
+    private fun name(p: JSONObject) = p.optString("placeName").trim().ifBlank { null }
 
     private fun codeOf(c: String) = when (c) {
         "PERMISSION" -> HoonsorAgent.PERMISSION_DENIED

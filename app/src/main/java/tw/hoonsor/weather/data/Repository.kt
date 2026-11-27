@@ -299,20 +299,46 @@ class Repository(
     private val hm = DateTimeFormatter.ofPattern("H:mm")
     private fun staleNote(s: Snapshot) = if (s.ageMinutes() > 90) "（這是 ${s.updatedAt.format(hm)} 的資料）" else ""
 
+    /** 語音說的地點名稱（placeName）→ 設定裡的地點；找不到或有好幾個就丟錯誤讓大腦唸出來 */
+    fun findPlace(name: String): tw.hoonsor.weather.domain.PlaceMatch.Hit {
+        val hits = tw.hoonsor.weather.domain.PlaceMatch.match(name, settings.extraPlaces, settings.place(PlaceKind.HOME), settings.place(PlaceKind.SCHOOL))
+        val names = (listOfNotNull(settings.place(PlaceKind.HOME)?.let { "家" }, settings.place(PlaceKind.SCHOOL)?.let { "學校" }) + settings.extraPlaces.map { it.label })
+        return when {
+            hits.isEmpty() -> throw AppError("NOT_FOUND", "找不到「$name」，請先在天氣 APP 的設定新增這個地點。" +
+                if (names.isEmpty()) "" else "目前有：${names.joinToString("、")}。")
+            hits.size > 1 -> throw AppError("AMBIGUOUS", "「$name」有好幾個：${hits.joinToString("、") { it.label }}，是哪一個？")
+            else -> hits[0]
+        }
+    }
+
+    /** 指定了 placeName 時的地點：kind（家、學校照舊，自訂地點用 CURRENT）、快照、要唸的說法 */
+    class Named(val kind: PlaceKind, val snap: Snapshot, val spoken: String, val label: String)
+
+    private suspend fun named(placeName: String?): Named? {
+        val n = placeName?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val hit = findPlace(n)
+        val s = snapshotRef(hit.ref)
+        val kind = PlaceKind.of(hit.ref) ?: PlaceKind.CURRENT
+        val spoken = if (kind != PlaceKind.CURRENT) Broadcast.placeText(kind, s.town)
+            else if (hit.label == s.town.name) s.town.name else "${hit.label}在${s.town.name}"
+        return Named(kind, s, spoken, hit.label)
+    }
+
     suspend fun kindOf(place: String?, default: PlaceKind = PlaceKind.CURRENT): PlaceKind = when (place) {
         null, "" -> default
         "auto" -> autoKind()
         else -> PlaceKind.of(place) ?: throw AppError("INVALID_PARAMS", "地點只能是目前位置、家或學校。")
     }
 
-    suspend fun tomorrowReport(place: String?, includeAir: Boolean = settings.broadcastAir, includeTyphoon: Boolean = settings.broadcastTyphoon): Report {
+    suspend fun tomorrowReport(place: String?, includeAir: Boolean = settings.broadcastAir, includeTyphoon: Boolean = settings.broadcastTyphoon, placeName: String? = null): Report {
         val date = LocalDate.now().plusDays(1)
-        val kind = kindOf(place ?: "auto")
-        val s = snapshot(kind)
+        val nm = named(placeName)
+        val kind = nm?.kind ?: kindOf(place ?: "auto")
+        val s = nm?.snap ?: snapshot(kind)
         val d = s.day(date) ?: throw AppError("INTERNAL", "還沒有明天的預報，等一下再問我。")
         val air = s.airTomorrow
         val advice = ClothingRules.advise(d, air?.aqi, settings.shift)
-        val sb = StringBuilder(Broadcast.tomorrow(d, kind, s.town, advice))
+        val sb = StringBuilder(Broadcast.tomorrow(d, kind, s.town, advice, nm?.spoken))
         var airJson: JSONObject? = null
         if (air != null) {
             airJson = JSONObject().put("aqi", air.aqi).put("level", Aqi.level(air.aqi).name.lowercase()).put("area", air.area)
@@ -325,7 +351,7 @@ class Repository(
         }
         sb.append(staleNote(s))
         val workday = calendar().isWorkday(date)
-        val data = JSONObject().put("date", date.toString()).put("placeKind", kind.key).put("town", s.town.full).put("isWorkday", workday)
+        val data = JSONObject().put("date", date.toString()).put("placeKind", kind.key).put("placeName", nm?.label ?: JSONObject.NULL).put("town", s.town.full).put("isWorkday", workday)
             .put("weather", d.weather).put("feelsMin", d.feelsMin).put("feelsMax", d.feelsMax).put("tempMin", d.tempMin).put("tempMax", d.tempMax)
             .put("rainProbDay", d.rainDay ?: JSONObject.NULL).put("rainProbNight", d.rainNight ?: JSONObject.NULL)
             .put("uvIndex", d.uvIndex ?: JSONObject.NULL).put("beaufortMax", d.beaufortMax ?: JSONObject.NULL)
@@ -335,15 +361,16 @@ class Repository(
     }
 
     /** 今天從現在到晚上（早上播報用）；auto 依「今天」是否上班選學校或家 */
-    suspend fun todayReport(place: String?, includeAir: Boolean = settings.broadcastAir, includeTyphoon: Boolean = settings.broadcastTyphoon): Report {
+    suspend fun todayReport(place: String?, includeAir: Boolean = settings.broadcastAir, includeTyphoon: Boolean = settings.broadcastTyphoon, placeName: String? = null): Report {
         val now = LocalDateTime.now()
         val date = now.toLocalDate()
-        val kind = if (place.isNullOrBlank() || place == "auto") autoKind(date) else kindOf(place)
-        val s = snapshot(kind)
+        val nm = named(placeName)
+        val kind = nm?.kind ?: if (place.isNullOrBlank() || place == "auto") autoKind(date) else kindOf(place)
+        val s = nm?.snap ?: snapshot(kind)
         val d = s.todayRest(now) ?: throw AppError("INTERNAL", "還沒有今天的預報，等一下再問我。")
         val air = s.airNow
         val advice = ClothingRules.advise(d, air?.aqi, settings.shift)
-        val sb = StringBuilder(Broadcast.today(d, kind, s.town, advice, now.hour))
+        val sb = StringBuilder(Broadcast.today(d, kind, s.town, advice, now.hour, nm?.spoken))
         var airJson: JSONObject? = null
         if (air != null) {
             airJson = JSONObject().put("aqi", air.aqi).put("level", Aqi.level(air.aqi).name.lowercase()).put("area", air.area)
@@ -356,7 +383,7 @@ class Repository(
         }
         sb.append(staleNote(s))
         val workday = calendar().isWorkday(date)
-        val data = JSONObject().put("date", date.toString()).put("placeKind", kind.key).put("town", s.town.full).put("isWorkday", workday)
+        val data = JSONObject().put("date", date.toString()).put("placeKind", kind.key).put("placeName", nm?.label ?: JSONObject.NULL).put("town", s.town.full).put("isWorkday", workday)
             .put("weather", d.weather).put("feelsMin", d.feelsMin).put("feelsMax", d.feelsMax).put("tempMin", d.tempMin).put("tempMax", d.tempMax)
             .put("rainProbDay", d.rainDay ?: JSONObject.NULL).put("rainProbNight", d.rainNight ?: JSONObject.NULL)
             .put("uvIndex", d.uvIndex ?: JSONObject.NULL).put("beaufortMax", d.beaufortMax ?: JSONObject.NULL)
@@ -365,38 +392,38 @@ class Repository(
         return Report(sb.toString(), data)
     }
 
-    suspend fun nowReport(place: String?): Report {
-        val kind = kindOf(place)
-        val s = snapshot(kind)
+    suspend fun nowReport(place: String?, placeName: String? = null): Report {
+        val nm = named(placeName)
+        val s = nm?.snap ?: snapshot(kindOf(place))
         val n = s.now() ?: throw AppError("INTERNAL", "還沒有現在的天氣資料，等一下再問我。")
         val next = s.hours.filter { it.time.isAfter(LocalDateTime.now()) }.take(2).mapNotNull { it.rain }.maxOrNull() ?: n.rainNext3h
         val rain = next?.let { "，接下來 3 小時降雨機率 $it%" } ?: ""
-        val summary = "${s.town.name}現在 ${n.temp} 度，體感 ${n.feels} 度，${n.weather.ifBlank { "天氣資料不完整" }}$rain。${staleNote(s)}"
+        val summary = "${nm?.spoken ?: s.town.name}現在 ${n.temp} 度，體感 ${n.feels} 度，${n.weather.ifBlank { "天氣資料不完整" }}$rain。${staleNote(s)}"
         return Report(summary, JSONObject().put("town", s.town.full).put("temp", n.temp).put("feels", n.feels).put("weather", n.weather)
             .put("humidity", n.humidity ?: JSONObject.NULL).put("rainNext3h", next ?: JSONObject.NULL).put("source", s.source).put("updatedAt", s.updatedAt.toString()))
     }
 
-    suspend fun weekReport(place: String?): Report {
-        val kind = kindOf(place)
-        val s = snapshot(kind)
+    suspend fun weekReport(place: String?, placeName: String? = null): Report {
+        val nm = named(placeName)
+        val s = nm?.snap ?: snapshot(kindOf(place))
         val days = s.days.filter { !it.date.isBefore(LocalDate.now()) }.take(7)
         if (days.isEmpty()) throw AppError("INTERNAL", "還沒有一週預報，等一下再問我。")
         val lo = days.minOf { it.tempMin }; val hi = days.maxOf { it.tempMax }
         val rainy = days.filter { maxOf(it.rainDay ?: 0, it.rainNight ?: 0) >= 50 }.map { Broadcast.weekdayName(it.date) }
         val rainText = if (rainy.isEmpty()) "這幾天降雨機率都不高" else rainy.joinToString("、") + "降雨機率比較高"
         val coldest = days.minBy { it.tempMin }
-        val summary = "未來 ${days.size} 天${s.town.name} $lo 到 $hi 度，$rainText；最冷是${Broadcast.weekdayName(coldest.date)}，低溫 ${coldest.tempMin} 度。${staleNote(s)}"
+        val summary = "未來 ${days.size} 天${nm?.spoken ?: s.town.name} $lo 到 $hi 度，$rainText；最冷是${Broadcast.weekdayName(coldest.date)}，低溫 ${coldest.tempMin} 度。${staleNote(s)}"
         return Report(summary, JSONObject().put("town", s.town.full).put("days", JSONArray(days.map(SnapshotJson::day))))
     }
 
-    suspend fun airReport(place: String?, day: String?): Report {
+    suspend fun airReport(place: String?, day: String?, placeName: String? = null): Report {
         if (!vault.has(Vault.MOENV)) throw AppError("PERMISSION", "還沒設定環境部金鑰，到天氣 APP 的設定填好就能查空氣品質。")
-        val kind = kindOf(place)
-        val s = snapshot(kind)
+        val nm = named(placeName)
+        val s = nm?.snap ?: snapshot(kindOf(place))
         val tomorrow = day == "tomorrow"
         val a = (if (tomorrow) s.airTomorrow else s.airNow) ?: throw AppError("INTERNAL", "空氣品質資料現在抓不到，等一下再問我。")
         val lv = Aqi.level(a.aqi)
-        return Report(Broadcast.air(a), JSONObject().put("aqi", a.aqi).put("level", lv.name.lowercase()).put("color", lv.color)
+        return Report((nm?.let { it.label + "，" } ?: "") + Broadcast.air(a), JSONObject().put("aqi", a.aqi).put("level", lv.name.lowercase()).put("color", lv.color)
             .put("pm25", a.pm25 ?: JSONObject.NULL).put("area", a.area).put("forecast", a.isForecast))
     }
 
@@ -413,9 +440,12 @@ class Repository(
 
     fun placeListReport(): Report {
         val home = settings.place(PlaceKind.HOME); val school = settings.place(PlaceKind.SCHOOL); val cur = settings.place(PlaceKind.CURRENT)
+        val extras = settings.extraPlaces
         val parts = listOf("家" to home, "學校" to school).map { (k, t) -> if (t == null) "${k}還沒設定" else "${k}在${t.full}" } +
-            listOfNotNull(cur?.let { "目前位置判斷在${it.full}" })
-        return Report(parts.joinToString("，") + "。", JSONObject().put("home", home?.full ?: JSONObject.NULL).put("school", school?.full ?: JSONObject.NULL).put("current", cur?.full ?: JSONObject.NULL))
+            listOfNotNull(cur?.let { "目前位置判斷在${it.full}" }) +
+            listOfNotNull(extras.takeIf { it.isNotEmpty() }?.let { l -> "其他地點有" + l.joinToString("、") { if (it.label == it.town.name) it.town.full else "${it.label}（${it.town.full}）" } })
+        return Report(parts.joinToString("，") + "。", JSONObject().put("home", home?.full ?: JSONObject.NULL).put("school", school?.full ?: JSONObject.NULL).put("current", cur?.full ?: JSONObject.NULL)
+            .put("others", JSONArray(extras.map { JSONObject().put("name", it.label).put("town", it.town.full) })))
     }
 
     /** 清掉某地點的快取（改地點後） */

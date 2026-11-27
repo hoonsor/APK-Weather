@@ -20,6 +20,8 @@ object WeatherAgentCatalog {
         .put("properties", JSONObject().apply { p.forEach { (k, v) -> put(k, v) } }).put("required", JSONArray(required))
 
     private val place3 = s("查哪裡，預設 current（目前位置）", listOf("current", "home", "school"))
+    /** v0.10.0 新增（選填）：倬在天氣 APP 設定頁加的地點名稱 */
+    private val placeName = s("設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list")
 
     val actions: List<JSONObject> = listOf(
         HoonsorAgent.action(
@@ -30,8 +32,9 @@ object WeatherAgentCatalog {
                 "place" to s("查哪裡：auto＝依明天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校", listOf("auto", "current", "home", "school")),
                 "includeAir" to b("有空品警戒時一起唸，預設 true"),
                 "includeTyphoon" to b("有颱風時一起唸，預設 true"),
+                "placeName" to placeName,
             ),
-            listOf("明天天氣怎樣", "明天要帶傘嗎", "明天穿什麼", "明天學校那邊會不會下雨", "明天家裡那邊冷不冷"),
+            listOf("明天天氣怎樣", "明天要帶傘嗎", "明天穿什麼", "明天學校那邊會不會下雨", "明天家裡那邊冷不冷", "阿嬤家明天天氣", "明天去西屯區要穿什麼"),
         ),
         HoonsorAgent.action(
             "weather_today", "今天天氣",
@@ -41,22 +44,23 @@ object WeatherAgentCatalog {
                 "place" to s("查哪裡：auto＝依今天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校", listOf("auto", "current", "home", "school")),
                 "includeAir" to b("有空品警戒時一起唸，預設 true"),
                 "includeTyphoon" to b("有颱風時一起唸，預設 true"),
+                "placeName" to placeName,
             ),
-            listOf("今天天氣怎樣", "今天要帶傘嗎", "今天穿什麼", "今天學校那邊會不會下雨"),
+            listOf("今天天氣怎樣", "今天要帶傘嗎", "今天穿什麼", "今天學校那邊會不會下雨", "阿嬤家今天會下雨嗎"),
         ),
         HoonsorAgent.action(
             "weather_now", "現在天氣", "唸目前溫度、體感、天氣狀況與接下來幾小時會不會下雨。不含明天預報；今天整天用 weather_today。", "read",
-            obj("place" to place3),
-            listOf("現在外面幾度", "等一下會下雨嗎", "學校現在天氣怎樣"),
+            obj("place" to place3, "placeName" to placeName),
+            listOf("現在外面幾度", "等一下會下雨嗎", "學校現在天氣怎樣", "阿嬤家現在幾度"),
         ),
         HoonsorAgent.action(
             "weather_week", "一週天氣", "唸未來 7 天的天氣概況、高低溫與降雨機率較高的日子。", "read",
-            obj("place" to place3),
-            listOf("這禮拜天氣怎樣", "週末會不會下雨", "下週會變冷嗎"),
+            obj("place" to place3, "placeName" to placeName),
+            listOf("這禮拜天氣怎樣", "週末會不會下雨", "下週會變冷嗎", "阿嬤家這禮拜天氣"),
         ),
         HoonsorAgent.action(
             "air_quality", "空氣品質", "唸空氣品質指標 AQI、PM2.5 與建議（戴口罩、減少戶外活動）。today 用附近測站即時值，tomorrow 用空品區預報。", "read",
-            obj("place" to place3, "day" to s("today＝現在、tomorrow＝明天預報，預設 today", listOf("today", "tomorrow"))),
+            obj("place" to place3, "day" to s("today＝現在、tomorrow＝明天預報，預設 today", listOf("today", "tomorrow")), "placeName" to placeName),
             listOf("現在空氣好不好", "明天 PM2.5 高不高", "要不要戴口罩"),
         ),
         HoonsorAgent.action(
@@ -66,8 +70,8 @@ object WeatherAgentCatalog {
             listOf("颱風會不會來", "這個颱風什麼時候最近", "明天會不會放颱風假", "學校那邊會進暴風圈嗎"),
         ),
         HoonsorAgent.action(
-            "place_list", "常用地點", "列出設定好的家、學校所在鄉鎮，以及目前位置判斷到的鄉鎮。", "read", obj(),
-            listOf("天氣的家設在哪", "我設定的地點有哪些", "現在定位在哪一區"),
+            "place_list", "常用地點", "列出設定好的家、學校所在鄉鎮、目前位置判斷到的鄉鎮，以及設定頁加的其他地點（名稱與鄉鎮）。", "read", obj(),
+            listOf("天氣的家設在哪", "我設定的地點有哪些", "現在定位在哪一區", "天氣 APP 有哪些地點"),
         ),
         HoonsorAgent.action(
             "place_set", "設定地點", "把家或學校設成某個鄉鎮市區（例如「新北市板橋區」）。只到鄉鎮層級，不存門牌。可復原。", "reversible",

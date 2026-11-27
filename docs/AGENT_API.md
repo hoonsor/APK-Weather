@@ -1,17 +1,17 @@
 # Agent API：倬的天氣（tw.hoonsor.weather）
 
-> 狀態：**已實作**（v0.8.0，10 個動作；`agent/AgentProvider.kt`）。資料來源欄位已在 2026-11-11 用實際回應核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
+> 狀態：**已實作**（v0.10.0，10 個動作；`agent/AgentProvider.kt`）。資料來源欄位已在 2026-11-11 用實際回應核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
 > 機器可讀版：`docs/agent-manifest.json`（實作後與 `describe` 回傳完全一致，JVM 測試比對）。
 
 ## 動作總覽
 
 | 動作 | risk | 參數 | 範例句 | 狀態 |
 |---|---|---|---|---|
-| weather_tomorrow | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 明天要帶傘嗎 | 已實作 |
-| weather_today | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 今天要帶傘嗎 | 已實作 |
-| weather_now | read | place?（current／home／school） | 現在外面幾度 | 已實作 |
-| weather_week | read | place? | 週末會不會下雨 | 已實作 |
-| air_quality | read | place?、day?（today／tomorrow） | 要不要戴口罩 | 已實作 |
+| weather_tomorrow | read | place?（auto／current／home／school）、includeAir?、includeTyphoon?、placeName? | 明天要帶傘嗎、阿嬤家明天天氣 | 已實作 |
+| weather_today | read | place?（auto／current／home／school）、includeAir?、includeTyphoon?、placeName? | 今天要帶傘嗎 | 已實作 |
+| weather_now | read | place?（current／home／school）、placeName? | 現在外面幾度 | 已實作 |
+| weather_week | read | place?、placeName? | 週末會不會下雨 | 已實作 |
+| air_quality | read | place?、day?（today／tomorrow）、placeName? | 要不要戴口罩 | 已實作 |
 | typhoon_status | read | — | 颱風會不會來 | 已實作 |
 | place_list | read | — | 我設定的地點有哪些 | 已實作 |
 | place_set | reversible | which（home／school）、town?、useCurrent? | 把學校設成現在這裡 | 已實作 |
@@ -22,6 +22,7 @@
 
 - **逾時**：要連網的動作覆寫 `timeoutMs` 為 15 秒。先回 30 分鐘內的快取；快取過期才連網，連不上就回最後一次資料並在 summary 說「這是 N 點的資料」。
 - **地點**：`auto` 依 F07／F08：明天是辦公日曆的上班日 → school；否則 → home；沒設定家 → current。沒設定學校卻要查 school → `NOT_FOUND`，message「還沒設定學校的位置，要不要把現在這裡設成學校？」
+- **placeName（v0.10.0，選填）**：設定頁地點的名稱（倬自己取的，例如「阿嬤家」），也接受「家」「學校」和鄉鎮名（「西屯區」「台中市西屯區」）。有給就優先於 `place`。比對順序：名稱完全相同 → 名稱互相包含（「阿嬤」）→ 鄉鎮名；會去掉「那邊、那裡、的天氣」等尾巴、台／臺視為相同（`domain/PlaceMatch.kt`，`PlaceMatchTest`）。找不到回 `NOT_FOUND`，message 會列出目前有哪些地點；對到好幾個回 `AMBIGUOUS`，message 列出名稱請倬選。summary 唸成「阿嬤家在西屯區」；家、學校照舊唸「家裡○○」「學校在○○」。data 多一個 `placeName`（沒用時是 null）。
 - **summary 是完整播報句**：大腦直接唸，不必再讓 AI 改寫；data 同時給結構化欄位，讓 AI 回答追問（「那後天呢」）。
 - **隱私**：data 只放鄉鎮名稱，不放經緯度。
 
@@ -94,6 +95,7 @@ summary：「這週中壢區 16 到 26 度，星期四跟星期五降雨機率�
 
 ## place_list／place_set
 
+- place_list 的 summary 會接「其他地點有阿嬤家（臺中市西屯區）、…」，data 多 `others: [{name, town}]`（v0.10.0）。
 - place_set 只接受鄉鎮層級；`town` 重名（例：「東區」）回 `AMBIGUOUS`，candidates 列縣市＋區。
 - place_set 成功回 `undo: {action: "place_set", params: {which, town: 舊值}}`。
 

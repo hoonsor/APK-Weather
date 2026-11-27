@@ -2,7 +2,7 @@
   "api": 1,
   "app": "倬的天氣",
   "package": "tw.hoonsor.weather",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "台灣天氣、穿著建議、空氣品質警戒、颱風對家與學校的影響。資料來自中央氣象署與環境部，判斷在手機上用規則完成。",
   "actions": [
     {
@@ -30,6 +30,10 @@
           "includeTyphoon": {
             "type": "boolean",
             "description": "有颱風時一起唸，預設 true"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list"
           }
         },
         "required": []
@@ -39,7 +43,9 @@
         "明天要帶傘嗎",
         "明天穿什麼",
         "明天學校那邊會不會下雨",
-        "明天家裡那邊冷不冷"
+        "明天家裡那邊冷不冷",
+        "阿嬤家明天天氣",
+        "明天去西屯區要穿什麼"
       ]
     },
     {
@@ -67,6 +73,10 @@
           "includeTyphoon": {
             "type": "boolean",
             "description": "有颱風時一起唸，預設 true"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list"
           }
         },
         "required": []
@@ -75,7 +85,8 @@
         "今天天氣怎樣",
         "今天要帶傘嗎",
         "今天穿什麼",
-        "今天學校那邊會不會下雨"
+        "今天學校那邊會不會下雨",
+        "阿嬤家今天會下雨嗎"
       ]
     },
     {
@@ -94,6 +105,10 @@
               "school"
             ],
             "description": "查哪裡，預設 current（目前位置）"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list"
           }
         },
         "required": []
@@ -101,7 +116,8 @@
       "examples": [
         "現在外面幾度",
         "等一下會下雨嗎",
-        "學校現在天氣怎樣"
+        "學校現在天氣怎樣",
+        "阿嬤家現在幾度"
       ]
     },
     {
@@ -120,6 +136,10 @@
               "school"
             ],
             "description": "查哪裡，預設 current（目前位置）"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list"
           }
         },
         "required": []
@@ -127,7 +147,8 @@
       "examples": [
         "這禮拜天氣怎樣",
         "週末會不會下雨",
-        "下週會變冷嗎"
+        "下週會變冷嗎",
+        "阿嬤家這禮拜天氣"
       ]
     },
     {
@@ -154,6 +175,10 @@
               "tomorrow"
             ],
             "description": "today＝現在、tomorrow＝明天預報，預設 today"
+          },
+          "placeName": {
+            "type": "string",
+            "description": "設定頁裡地點的名稱，例如「阿嬤家」，也可以說鄉鎮名「西屯區」；有給就優先於 place。不知道有哪些地點時先呼叫 place_list"
           }
         },
         "required": []
@@ -184,7 +209,7 @@
     {
       "name": "place_list",
       "title": "常用地點",
-      "description": "列出設定好的家、學校所在鄉鎮，以及目前位置判斷到的鄉鎮。",
+      "description": "列出設定好的家、學校所在鄉鎮、目前位置判斷到的鄉鎮，以及設定頁加的其他地點（名稱與鄉鎮）。",
       "risk": "read",
       "params": {
         "type": "object",
@@ -194,7 +219,8 @@
       "examples": [
         "天氣的家設在哪",
         "我設定的地點有哪些",
-        "現在定位在哪一區"
+        "現在定位在哪一區",
+        "天氣 APP 有哪些地點"
       ]
     },
     {
