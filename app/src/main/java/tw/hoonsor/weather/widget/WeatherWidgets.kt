@@ -202,7 +202,7 @@ class Weather41 : GlanceAppWidget() {
     }
 
     /**
-     * 版面 A：左「現在」（地點、溫度、今天高低溫）；旁邊一欄上面天氣圖示＋水滴降雨機率、下面外出穿著圖示；
+     * 版面 A：左「現在」（地點、溫度、今天高低溫）；旁邊一欄由上而下：天氣圖示、外出穿著圖示、水滴降雨機率；
      * 中間未來 4 天（高溫、低溫各一行，倬要求維持原樣）；右側切換鈕。格子矮（< 100dp）時字與圖示縮小。
      */
     @Composable
@@ -234,11 +234,8 @@ class Weather41 : GlanceAppWidget() {
                 GlanceModifier.fillMaxHeight().clickable(WeatherWidgets.open(context, "tomorrow")),
                 verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.Start,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Img(WeatherWidgets.icon(d.icon), if (compact) 28 else 34)
-                    Spacer(GlanceModifier.width(2.dp))
-                    RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
-                }
+                // 倬 2026-11-27（v0.10.2）：三列直排：天氣圖示／穿著／水滴降雨機率，整欄置中所以前兩列往上移
+                Img(WeatherWidgets.icon(d.icon), if (compact) 26 else 32)
                 if (d.wearItems.isNotEmpty()) {
                     Spacer(GlanceModifier.height(if (compact) 1.dp else 3.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -250,6 +247,8 @@ class Weather41 : GlanceAppWidget() {
                         if (d.wearItems.size == 1) T(" " + d.wearItems[0].label, 12.sp, soft)
                     }
                 }
+                Spacer(GlanceModifier.height(if (compact) 1.dp else 3.dp))
+                RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
             }
             Row(GlanceModifier.defaultWeight().fillMaxHeight().clickable(WeatherWidgets.open(context, "week")), verticalAlignment = Alignment.CenterVertically) {
                 d.days.forEach { day ->
