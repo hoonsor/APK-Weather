@@ -194,14 +194,11 @@ class Weather41 : GlanceAppWidget() {
             Row(GlanceModifier.defaultWeight().fillMaxHeight().clickable(WeatherWidgets.open(context, "week")), verticalAlignment = Alignment.CenterVertically) {
                 d.days.forEach { day ->
                     Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        T(day.name, if (compact) 11.sp else 12.sp, soft)
-                        Img(WeatherWidgets.icon(day.icon), if (compact) 22 else 24)
-                        if (compact) {
-                            T("${day.hi}°/${day.lo}°", 11.sp)
-                        } else {
-                            T("${day.hi}°", 12.sp)
-                            T("${day.lo}°", 12.sp, mute)
-                        }
+                        // 倬 2026-11-27：4 天維持原本樣式（高溫、低溫各一行）；格子矮時只把圖示縮小，不併行
+                        T(day.name, 12.sp, soft)
+                        Img(WeatherWidgets.icon(day.icon), if (compact) 20 else 24)
+                        T("${day.hi}°", 12.sp)
+                        T("${day.lo}°", 12.sp, mute)
                     }
                 }
             }
