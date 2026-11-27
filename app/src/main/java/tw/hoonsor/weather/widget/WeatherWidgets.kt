@@ -175,7 +175,7 @@ class Weather41 : GlanceAppWidget() {
             GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = vPad, bottom = vPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.width(86.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
+            Column(GlanceModifier.fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     T(d.town, if (compact) 12.sp else 13.sp)
                     if (d.badge != null) { Spacer(GlanceModifier.width(4.dp)); Badge(d.badge) }
@@ -184,17 +184,19 @@ class Weather41 : GlanceAppWidget() {
                 T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
             }
             // 倬 2026-11-27：溫度右邊的空位補滿：上面天氣圖示＋水滴降雨機率，下面外出穿著圖示
+            // 倬 2026-11-27：這一欄緊貼溫度（寬度跟內容一樣、間距 8dp），把空間留給右邊 4 天
+            Spacer(GlanceModifier.width(8.dp))
             Column(
-                GlanceModifier.width(84.dp).fillMaxHeight().clickable(WeatherWidgets.open(context, "tomorrow")),
-                verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally,
+                GlanceModifier.fillMaxHeight().clickable(WeatherWidgets.open(context, "tomorrow")),
+                verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.Start,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Img(WeatherWidgets.icon(d.icon), if (compact) 28 else 34)
-                    Spacer(GlanceModifier.width(3.dp))
+                    Spacer(GlanceModifier.width(2.dp))
                     RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
                 }
                 if (d.wearItems.isNotEmpty()) {
-                    Spacer(GlanceModifier.height(if (compact) 2.dp else 5.dp))
+                    Spacer(GlanceModifier.height(if (compact) 1.dp else 3.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         d.wearItems.take(3).forEachIndexed { i, it ->
                             if (i > 0) Spacer(GlanceModifier.width(3.dp))
