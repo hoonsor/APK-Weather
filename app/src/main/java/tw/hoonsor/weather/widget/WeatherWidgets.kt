@@ -280,7 +280,7 @@ class Weather41 : GlanceAppWidget() {
         ) {
             // 明天天氣
             Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block_tomorrow)).padding(horizontal = 7.dp, vertical = 4.dp).clickable(WeatherWidgets.open(context, "tomorrow"))) {
-                // 倬 2026-11-27：氣溫放大、獨佔中間一整行；天氣圖示移到標題列右側，降雨機率靠右下
+                // 倬 2026-11-27：氣溫放大、獨佔中間一整行；天氣圖示移到標題列右側，降雨機率在區塊底部置中（v0.10.1 倬要求）
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                         if (d.badge != null) { T("明天", 11.sp, amber); Spacer(GlanceModifier.width(3.dp)); Badge(d.badge) } else T(d.tomorrowLabel, 11.sp, amber)
@@ -290,7 +290,7 @@ class Weather41 : GlanceAppWidget() {
                 Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
                     T(if (d.tomorrowLo != null) "${d.tomorrowLo}–${d.tomorrowHi}°" else "--", if (compact) 21.sp else 25.sp)
                 }
-                Row(GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+                Row(GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     RainPct(listOfNotNull(d.tomorrowRainDay, d.tomorrowRainNight).maxOrNull(), 11.sp)
                 }
             }
