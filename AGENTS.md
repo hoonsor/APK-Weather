@@ -47,7 +47,7 @@ app/src/main/java/
    │            Sources（所有連線）、*Parse（純解析：CwaParse、Parsers.kt、SnapshotJson、JsonX 寬鬆讀取）
    │            Settings（settings.xml）、Vault（授權碼，Keystore AES-GCM，不備份）、Locator（LocationManager＋Geocoder）
    ├─ widget/   WidgetData（小工具內容，純資料）、WeatherWidgets（Glance：4×1 A／C、2×2 現在、2×2 明天、ToggleMode）
-   ├─ agent/    WeatherAgentCatalog（describe）、AgentProvider（9 個動作）
+   ├─ agent/    WeatherAgentCatalog（describe）、AgentProvider（10 個動作）
    ├─ work/     Scheduler、RefreshWorker（定時更新＋小工具＋突發通知）、MorningWorker（F19）、Alerts、Notifier
    ├─ backup/   Backup（分享、存下載、SAF 存檔、匯入合併／取代、匯入前自動備份與復原）
    └─ ui/       MainActivity（畫面切換、權限、檔案選擇、朗讀）、HomeScreen、SettingsScreen、HealthScreen（含 API 測試台）、Common、theme/Palette

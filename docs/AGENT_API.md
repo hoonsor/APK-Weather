@@ -1,6 +1,6 @@
 # Agent API：倬的天氣（tw.hoonsor.weather）
 
-> 狀態：**已實作**（v0.6.1，9 個動作；`agent/AgentProvider.kt`）。資料來源欄位已在 2026-11-11 用實際回應核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
+> 狀態：**已實作**（v0.8.0，10 個動作；`agent/AgentProvider.kt`）。資料來源欄位已在 2026-11-11 用實際回應核對。協定本身見語音總控 `docs/AGENT_PROTOCOL.md`（api 1），這裡只列本 APP 的動作。
 > 機器可讀版：`docs/agent-manifest.json`（實作後與 `describe` 回傳完全一致，JVM 測試比對）。
 
 ## 動作總覽
@@ -8,6 +8,7 @@
 | 動作 | risk | 參數 | 範例句 | 狀態 |
 |---|---|---|---|---|
 | weather_tomorrow | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 明天要帶傘嗎 | 已實作 |
+| weather_today | read | place?（auto／current／home／school）、includeAir?、includeTyphoon? | 今天要帶傘嗎 | 已實作 |
 | weather_now | read | place?（current／home／school） | 現在外面幾度 | 已實作 |
 | weather_week | read | place? | 週末會不會下雨 | 已實作 |
 | air_quality | read | place?、day?（today／tomorrow） | 要不要戴口罩 | 已實作 |
@@ -48,6 +49,20 @@ data：
   "source": "cwa", "updatedAt": "2026-11-10T20:45:00+08:00"
 }
 ```
+
+## weather_today
+
+早上的每日行程提醒（語音總控 v0.14.0 起，`place=auto`）與隨口問「今天」都用這個。v0.8.0 新增。
+
+- 範圍：**現在到今天晚上**。已經過去的時段不算（早上 7 點問，凌晨的低溫不唸）；7 日資料的今天有時只剩晚上那段，所以溫度、體感、降雨用今天剩下的逐時資料補（`Snapshot.todayRest`）。
+- `auto`：今天是辦公日曆的上班日 → school；否則 → home。
+- 空品警戒用現在的 AQI（今天沒有預報），颱風同 weather_tomorrow。
+- 18 點以後問：說「今晚」，只算晚上降雨。
+
+summary 範例：
+> 今天 11 月 27 日星期五，學校在中壢區，白天多雲時晴，體感 17 到 24 度，白天降雨機率 30%。建議短袖加薄外套，帶把折傘。
+
+data 欄位同 weather_tomorrow（date 是今天）。
 
 ## weather_now
 
@@ -95,7 +110,10 @@ summary：「這週中壢區 16 到 26 度，星期四跟星期五降雨機率�
 | 連不上且沒有快取 | INTERNAL | 氣象資料現在抓不到，可能是網路不穩，等一下再問我。 |
 | 學校或家未設定 | NOT_FOUND | 還沒設定學校的位置，要不要把現在這裡設成學校？ |
 
-## 語音總控那邊要做的事（42 號，另案）
+## 語音總控整合（42 號，已完成）
+
+> 語音總控 v0.13.0 起「每日行程提醒」會一起唸天氣（設定「一起唸天氣」，預設開）：唸到今天呼叫 weather_now（v0.14.0 起改 weather_today，舊版天氣 APP 退回 weather_now）、唸到明天呼叫 weather_tomorrow；後天以後不唸天氣。以下是當初的規劃。
+
 
 「明天行程提醒」目前只唸行事曆。要加：
 1. 設定頁「一起唸明天天氣」開關（預設開）。

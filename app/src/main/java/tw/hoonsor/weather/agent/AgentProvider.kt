@@ -55,6 +55,8 @@ class AgentProvider : HoonsorAgentProvider() {
             when (request.action) {
                 "weather_tomorrow" -> ok(repo.tomorrowReport(p.optString("place", "auto").ifBlank { "auto" },
                     p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon)))
+                "weather_today" -> ok(repo.todayReport(p.optString("place", "auto").ifBlank { "auto" },
+                    p.optBoolean("includeAir", repo.settings.broadcastAir), p.optBoolean("includeTyphoon", repo.settings.broadcastTyphoon)))
                 "weather_now" -> ok(repo.nowReport(p.optString("place").ifBlank { null }))
                 "weather_week" -> ok(repo.weekReport(p.optString("place").ifBlank { null }))
                 "air_quality" -> ok(repo.airReport(p.optString("place").ifBlank { null }, p.optString("day").ifBlank { null }))

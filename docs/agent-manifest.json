@@ -2,13 +2,13 @@
   "api": 1,
   "app": "倬的天氣",
   "package": "tw.hoonsor.weather",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "台灣天氣、穿著建議、空氣品質警戒、颱風對家與學校的影響。資料來自中央氣象署與環境部，判斷在手機上用規則完成。",
   "actions": [
     {
       "name": "weather_tomorrow",
       "title": "明天天氣",
-      "description": "唸明天的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。沒指定地點時，明天要上班就查學校，其他日子查家。只問現在天氣用 weather_now，問一週用 weather_week。",
+      "description": "唸明天的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。沒指定地點時，明天要上班就查學校，其他日子查家。只問現在天氣用 weather_now，問今天整天用 weather_today，問一週用 weather_week。",
       "risk": "read",
       "params": {
         "type": "object",
@@ -43,9 +43,45 @@
       ]
     },
     {
+      "name": "weather_today",
+      "title": "今天天氣",
+      "description": "唸今天從現在到晚上的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。已經過去的時段不算。沒指定地點時，今天要上班就查學校，其他日子查家。早上的每日行程提醒用這個；只問此刻幾度用 weather_now。",
+      "risk": "read",
+      "params": {
+        "type": "object",
+        "properties": {
+          "place": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "current",
+              "home",
+              "school"
+            ],
+            "description": "查哪裡：auto＝依今天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校"
+          },
+          "includeAir": {
+            "type": "boolean",
+            "description": "有空品警戒時一起唸，預設 true"
+          },
+          "includeTyphoon": {
+            "type": "boolean",
+            "description": "有颱風時一起唸，預設 true"
+          }
+        },
+        "required": []
+      },
+      "examples": [
+        "今天天氣怎樣",
+        "今天要帶傘嗎",
+        "今天穿什麼",
+        "今天學校那邊會不會下雨"
+      ]
+    },
+    {
       "name": "weather_now",
       "title": "現在天氣",
-      "description": "唸目前溫度、體感、天氣狀況與接下來幾小時會不會下雨。不含明天預報。",
+      "description": "唸目前溫度、體感、天氣狀況與接下來幾小時會不會下雨。不含明天預報；今天整天用 weather_today。",
       "risk": "read",
       "params": {
         "type": "object",

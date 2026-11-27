@@ -24,7 +24,7 @@ object WeatherAgentCatalog {
     val actions: List<JSONObject> = listOf(
         HoonsorAgent.action(
             "weather_tomorrow", "明天天氣",
-            "唸明天的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。沒指定地點時，明天要上班就查學校，其他日子查家。只問現在天氣用 weather_now，問一週用 weather_week。",
+            "唸明天的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。沒指定地點時，明天要上班就查學校，其他日子查家。只問現在天氣用 weather_now，問今天整天用 weather_today，問一週用 weather_week。",
             "read",
             obj(
                 "place" to s("查哪裡：auto＝依明天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校", listOf("auto", "current", "home", "school")),
@@ -34,7 +34,18 @@ object WeatherAgentCatalog {
             listOf("明天天氣怎樣", "明天要帶傘嗎", "明天穿什麼", "明天學校那邊會不會下雨", "明天家裡那邊冷不冷"),
         ),
         HoonsorAgent.action(
-            "weather_now", "現在天氣", "唸目前溫度、體感、天氣狀況與接下來幾小時會不會下雨。不含明天預報。", "read",
+            "weather_today", "今天天氣",
+            "唸今天從現在到晚上的天氣、體感溫度、降雨機率與穿著建議；有空品警戒或颱風時一起唸。已經過去的時段不算。沒指定地點時，今天要上班就查學校，其他日子查家。早上的每日行程提醒用這個；只問此刻幾度用 weather_now。",
+            "read",
+            obj(
+                "place" to s("查哪裡：auto＝依今天是否上班自動選（預設）、current＝目前位置、home＝家、school＝學校", listOf("auto", "current", "home", "school")),
+                "includeAir" to b("有空品警戒時一起唸，預設 true"),
+                "includeTyphoon" to b("有颱風時一起唸，預設 true"),
+            ),
+            listOf("今天天氣怎樣", "今天要帶傘嗎", "今天穿什麼", "今天學校那邊會不會下雨"),
+        ),
+        HoonsorAgent.action(
+            "weather_now", "現在天氣", "唸目前溫度、體感、天氣狀況與接下來幾小時會不會下雨。不含明天預報；今天整天用 weather_today。", "read",
             obj("place" to place3),
             listOf("現在外面幾度", "等一下會下雨嗎", "學校現在天氣怎樣"),
         ),

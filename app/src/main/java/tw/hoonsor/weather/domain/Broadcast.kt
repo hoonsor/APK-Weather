@@ -55,9 +55,15 @@ object Broadcast {
     }
 
     /** weather_tomorrow 的天氣部分（不含空品、颱風） */
-    fun tomorrow(d: DayForecast, kind: PlaceKind, town: Town, advice: ClothingAdvice): String {
+    fun tomorrow(d: DayForecast, kind: PlaceKind, town: Town, advice: ClothingAdvice): String = dayLine("明天", "白天", d, kind, town, advice)
+
+    /** weather_today 的天氣部分；[hour]＝現在幾點，18 點以後改說「今晚」 */
+    fun today(d: DayForecast, kind: PlaceKind, town: Town, advice: ClothingAdvice, hour: Int): String =
+        dayLine("今天", if (hour >= 18) "今晚" else "白天", d, kind, town, advice)
+
+    private fun dayLine(day: String, part: String, d: DayForecast, kind: PlaceKind, town: Town, advice: ClothingAdvice): String {
         val rain = rainText(d)
-        val head = "明天 ${dateText(d.date)}，${placeText(kind, town)}，白天${d.weather}，體感 ${d.feelsMin} 到 ${d.feelsMax} 度" +
+        val head = "$day ${dateText(d.date)}，${placeText(kind, town)}，$part${d.weather}，體感 ${d.feelsMin} 到 ${d.feelsMax} 度" +
             (if (rain.isNotEmpty()) "，$rain" else "") + "。"
         return head + advice.sentence
     }

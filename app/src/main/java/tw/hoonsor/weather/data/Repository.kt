@@ -290,6 +290,37 @@ class Repository(
         return Report(sb.toString(), data)
     }
 
+    /** 今天從現在到晚上（早上播報用）；auto 依「今天」是否上班選學校或家 */
+    suspend fun todayReport(place: String?, includeAir: Boolean = settings.broadcastAir, includeTyphoon: Boolean = settings.broadcastTyphoon): Report {
+        val now = LocalDateTime.now()
+        val date = now.toLocalDate()
+        val kind = if (place.isNullOrBlank() || place == "auto") autoKind(date) else kindOf(place)
+        val s = snapshot(kind)
+        val d = s.todayRest(now) ?: throw AppError("INTERNAL", "還沒有今天的預報，等一下再問我。")
+        val air = s.airNow
+        val advice = ClothingRules.advise(d, air?.aqi, settings.shift)
+        val sb = StringBuilder(Broadcast.today(d, kind, s.town, advice, now.hour))
+        var airJson: JSONObject? = null
+        if (air != null) {
+            airJson = JSONObject().put("aqi", air.aqi).put("level", Aqi.level(air.aqi).name.lowercase()).put("area", air.area)
+            if (includeAir) Broadcast.airAlert(air, tomorrow = false)?.let { sb.append(it) }
+        }
+        var tyText: String? = null
+        if (includeTyphoon) {
+            val ty = runCatching { typhoons() }.getOrNull()?.list?.firstOrNull()
+            if (ty != null) { tyText = typhoonText(ty, short = true); sb.append(tyText) }
+        }
+        sb.append(staleNote(s))
+        val workday = calendar().isWorkday(date)
+        val data = JSONObject().put("date", date.toString()).put("placeKind", kind.key).put("town", s.town.full).put("isWorkday", workday)
+            .put("weather", d.weather).put("feelsMin", d.feelsMin).put("feelsMax", d.feelsMax).put("tempMin", d.tempMin).put("tempMax", d.tempMax)
+            .put("rainProbDay", d.rainDay ?: JSONObject.NULL).put("rainProbNight", d.rainNight ?: JSONObject.NULL)
+            .put("uvIndex", d.uvIndex ?: JSONObject.NULL).put("beaufortMax", d.beaufortMax ?: JSONObject.NULL)
+            .put("clothing", JSONArray(advice.items.map { it.label })).put("air", airJson ?: JSONObject.NULL)
+            .put("typhoon", tyText ?: JSONObject.NULL).put("source", s.source).put("updatedAt", s.updatedAt.toString())
+        return Report(sb.toString(), data)
+    }
+
     suspend fun nowReport(place: String?): Report {
         val kind = kindOf(place)
         val s = snapshot(kind)

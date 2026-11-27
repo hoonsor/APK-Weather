@@ -20,7 +20,7 @@ class ManifestTest {
     @Test fun actionNames() {
         val names = WeatherAgentCatalog.actions.map { it.getString("name") }
         assertEquals(
-            listOf("weather_tomorrow", "weather_now", "weather_week", "air_quality", "typhoon_status", "place_list", "place_set", "backup_export", "backup_import"),
+            listOf("weather_tomorrow", "weather_today", "weather_now", "weather_week", "air_quality", "typhoon_status", "place_list", "place_set", "backup_export", "backup_import"),
             names,
         )
         assertTrue(names.any { it.endsWith("_list") })

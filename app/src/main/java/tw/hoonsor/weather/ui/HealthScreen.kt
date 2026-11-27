@@ -173,7 +173,7 @@ fun TesterScreen(onBack: () -> Unit) {
 }
 
 private fun example(n: String) = when (n) {
-    "weather_tomorrow" -> """{"place":"auto"}"""
+    "weather_tomorrow", "weather_today" -> """{"place":"auto"}"""
     "weather_now", "weather_week" -> """{"place":"current"}"""
     "air_quality" -> """{"day":"tomorrow"}"""
     "place_set" -> """{"which":"school","useCurrent":true}"""

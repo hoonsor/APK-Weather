@@ -29,6 +29,38 @@ class BroadcastTest {
         assertEquals("明天 11 月 11 日星期三，學校在中壢區，白天多雲時晴，體感 17 到 24 度，晚上降雨機率 40%。建議短袖加薄外套，晚上帶把折傘。", s)
     }
 
+    private fun hour(t: LocalDateTime, temp: Int, rain: Int?, w: String = "多雲") = tw.hoonsor.weather.domain.HourPoint(t, temp, temp - 1, rain, 2, w)
+
+    @Test fun todayRestUsesRemainingHours() {
+        val day = LocalDate.of(2026, 11, 10)
+        val hours = listOf(
+            hour(day.atTime(3, 0), 12, 90, "陰"),       // 已經過去，不算
+            hour(day.atTime(9, 0), 18, 20),
+            hour(day.atTime(12, 0), 24, 60, "短暫雨"),
+            hour(day.atTime(15, 0), 23, 30),
+            hour(day.atTime(21, 0), 19, 10),
+            hour(day.plusDays(1).atTime(3, 0), 10, 0),  // 明天，不算
+        )
+        val snap = tw.hoonsor.weather.domain.Snapshot(PlaceKind.SCHOOL, town, day.atTime(7, 0), "cwa", hours, emptyList())
+        val d = snap.todayRest(day.atTime(7, 0))!!
+        assertEquals("多雲", d.weather)
+        assertEquals(18 to 24, d.tempMin to d.tempMax)
+        assertEquals(17 to 23, d.feelsMin to d.feelsMax)
+        assertEquals(60, d.rainDay)
+        assertEquals(10, d.rainNight)
+        // 18 點以後沒有白天降雨
+        assertNull(snap.todayRest(day.atTime(19, 0))!!.rainDay)
+        // 沒有今天的資料
+        assertNull(snap.copy(hours = emptyList()).todayRest(day.atTime(7, 0)))
+    }
+
+    @Test fun todaySentence() {
+        val d = DayForecast(LocalDate.of(2026, 11, 10), "多雲時晴", 3, 18, 25, 17, 24, 20, 40, 6, 3)
+        val s = Broadcast.today(d, PlaceKind.SCHOOL, town, ClothingRules.advise(d), 7)
+        assertEquals("今天 11 月 10 日星期二，學校在中壢區，白天多雲時晴，體感 17 到 24 度，晚上降雨機率 40%。建議短袖加薄外套，晚上帶把折傘。", s)
+        assertTrue(Broadcast.today(d, PlaceKind.HOME, town, ClothingRules.advise(d), 19).contains("家裡中壢區，今晚多雲時晴"))
+    }
+
     @Test fun airOnlyWhenAlert() {
         assertNull(Broadcast.airAlert(AirReading(100, null, "北部空品區", true), tomorrow = true))
         assertEquals("明天空氣品質橘色，對敏感族群不健康，外出建議戴口罩。", Broadcast.airAlert(AirReading(105, null, "北部空品區", true), tomorrow = true))

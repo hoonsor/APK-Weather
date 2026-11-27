@@ -50,5 +50,29 @@ data class Snapshot(
         return lo to hi
     }
 
+    /**
+     * 今天「從現在到晚上」的預報（weather_today 用）。
+     * 7 日資料的今天有時只剩晚上那段，所以溫度、體感、降雨都用今天剩下的逐時資料補；
+     * 已經過去的時段不算（早上 7 點問，凌晨的低溫不唸）。過了 18 點就沒有白天降雨。
+     */
+    fun todayRest(t: LocalDateTime = LocalDateTime.now()): DayForecast? {
+        val d = t.toLocalDate()
+        val day = day(d)
+        val hs = hours.filter { it.time.toLocalDate() == d && !it.time.isBefore(t.minusMinutes(90)) }
+        if (hs.isEmpty() && day == null) return null
+        val daytime = hs.filter { it.time.hour in 6..17 }
+        val pick = (daytime.ifEmpty { hs }).groupingBy { it.weather }.eachCount().maxByOrNull { it.value }?.key
+        val weather = day?.weather ?: pick ?: ""
+        val code = day?.weatherCode ?: hs.firstOrNull { it.weather == pick }?.code ?: 0
+        val temps = hs.map { it.temp } + listOfNotNull(day?.tempMin, day?.tempMax)
+        val feels = hs.map { it.feels ?: it.temp } + listOfNotNull(day?.feelsMin, day?.feelsMax)
+        val rainDay = if (t.hour >= 18) null else daytime.mapNotNull { it.rain }.maxOrNull() ?: day?.rainDay
+        val rainNight = hs.filter { it.time.hour >= 18 }.mapNotNull { it.rain }.maxOrNull() ?: day?.rainNight
+        return DayForecast(
+            d, weather, code, temps.min(), temps.max(), feels.min(), feels.max(), rainDay, rainNight,
+            day?.uvIndex, listOfNotNull(day?.beaufortMax, hs.mapNotNull { it.beaufort }.maxOrNull()).maxOrNull(),
+        )
+    }
+
     fun ageMinutes(t: LocalDateTime = LocalDateTime.now()) = ChronoUnit.MINUTES.between(updatedAt, t)
 }
