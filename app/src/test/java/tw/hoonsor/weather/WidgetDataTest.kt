@@ -41,10 +41,21 @@ class WidgetDataTest {
         assertFalse(d.stale)
         // 版面 C 三等分用的資料：明天紫外線、明天空品預報、附近測站現在的 PM2.5
         assertEquals(5, d.tomorrowUv); assertEquals(112, d.tomorrowAqi); assertEquals(15, d.pm25Now)
+        // A 版外出穿著：20:40 已經是準備明天，跟明天的建議一樣
+        assertEquals(d.tomorrowItems, d.wearItems)
         assertEquals(d, WidgetData.fromJson(d.toJson()))
         // 舊版存的 JSON 沒有新欄位也要讀得出來（升級後第一次更新前）
         val old = org.json.JSONObject(d.toJson()).apply { remove("tUv"); remove("tAqi"); remove("pm") }.toString()
         assertEquals(null, WidgetData.fromJson(old)!!.tomorrowUv)
+        val older = org.json.JSONObject(d.toJson()).apply { remove("wItems") }.toString()
+        assertEquals(emptyList<ClothingItem>(), WidgetData.fromJson(older)!!.wearItems)
+    }
+
+    @Test fun wearUsesTodayBeforeSix() {
+        val morning = now.withHour(7)
+        val d = WidgetData.build(snap(PlaceKind.CURRENT), PlaceKind.HOME, null, typhoonActive = false, shift = 0, at = morning)
+        // 早上看今天（體感 15–20），明天是 16–21：兩者的建議來源不同，至少要有東西
+        assertTrue(d.wearItems.isNotEmpty())
     }
 
     @Test fun uvLevels() {

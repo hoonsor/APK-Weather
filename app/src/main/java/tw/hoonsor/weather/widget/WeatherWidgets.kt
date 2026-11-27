@@ -164,8 +164,8 @@ class Weather41 : GlanceAppWidget() {
     }
 
     /**
-     * 版面 A：左「現在」（溫度、天氣圖示，圖示下方水滴＋降雨機率）、中間未來 4 天、右側切換鈕。
-     * 桌面格子比較矮時（< 100dp，倬的手機實測會把最低溫切掉）改成精簡排法：字縮小、4 天高低溫併成一行。
+     * 版面 A：左「現在」（地點、溫度、今天高低溫）；旁邊一欄上面天氣圖示＋水滴降雨機率、下面外出穿著圖示；
+     * 中間未來 4 天（高溫、低溫各一行，倬要求維持原樣）；右側切換鈕。格子矮（< 100dp）時字與圖示縮小。
      */
     @Composable
     private fun ModeA(context: Context, d: WidgetData) {
@@ -175,21 +175,35 @@ class Weather41 : GlanceAppWidget() {
             GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = vPad, bottom = vPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.width(124.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
+            Column(GlanceModifier.width(86.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     T(d.town, if (compact) 12.sp else 13.sp)
                     if (d.badge != null) { Spacer(GlanceModifier.width(4.dp)); Badge(d.badge) }
                 }
+                T(deg(d.temp), if (compact) 30.sp else 36.sp)
+                T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
+            }
+            // 倬 2026-11-27：溫度右邊的空位補滿：上面天氣圖示＋水滴降雨機率，下面外出穿著圖示
+            Column(
+                GlanceModifier.width(84.dp).fillMaxHeight().clickable(WeatherWidgets.open(context, "tomorrow")),
+                verticalAlignment = Alignment.CenterVertically, horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    T(deg(d.temp), if (compact) 30.sp else 36.sp)
-                    Spacer(GlanceModifier.width(4.dp))
-                    // 倬 2026-11-27：今天的天氣圖示、水滴、降雨機率都再大一點
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Img(WeatherWidgets.icon(d.icon), if (compact) 30 else 36)
-                        RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
+                    Img(WeatherWidgets.icon(d.icon), if (compact) 28 else 34)
+                    Spacer(GlanceModifier.width(3.dp))
+                    RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
+                }
+                if (d.wearItems.isNotEmpty()) {
+                    Spacer(GlanceModifier.height(if (compact) 2.dp else 5.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        d.wearItems.take(3).forEachIndexed { i, it ->
+                            if (i > 0) Spacer(GlanceModifier.width(3.dp))
+                            Img(WeatherWidgets.cloth(it), if (compact) 18 else 22)
+                        }
+                        // 只有一件時空間夠，加上文字（倬看不懂外套圖示）
+                        if (d.wearItems.size == 1) T(" " + d.wearItems[0].label, 12.sp, soft)
                     }
                 }
-                T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
             }
             Row(GlanceModifier.defaultWeight().fillMaxHeight().clickable(WeatherWidgets.open(context, "week")), verticalAlignment = Alignment.CenterVertically) {
                 d.days.forEach { day ->

@@ -38,6 +38,7 @@ data class WidgetData(
     val tomorrowUv: Int? = null,      // 明天紫外線指數（氣象署 1 週資料／Open-Meteo）
     val tomorrowAqi: Int? = null,     // 明天空品預報 AQI（環境部空品區預報；沒有 PM2.5 濃度預報）
     val pm25Now: Int? = null,         // 明天地點附近測站現在的 PM2.5（μg/m³）
+    val wearItems: List<ClothingItem> = emptyList(), // A 版「外出穿著」：18 點前看今天、18 點後看明天
 ) {
     data class Day(val name: String, val icon: WeatherIcon, val hi: Int, val lo: Int)
 
@@ -47,7 +48,8 @@ data class WidgetData(
         .put("tLabel", tomorrowLabel).put("tLo", tomorrowLo ?: JSONObject.NULL).put("tHi", tomorrowHi ?: JSONObject.NULL).put("tIcon", tomorrowIcon.name)
         .put("tRd", tomorrowRainDay ?: JSONObject.NULL).put("tRn", tomorrowRainNight ?: JSONObject.NULL)
         .put("tItems", JSONArray(tomorrowItems.map { it.name })).put("badge", badge ?: JSONObject.NULL).put("updated", updated).put("stale", stale)
-        .put("tUv", tomorrowUv ?: JSONObject.NULL).put("tAqi", tomorrowAqi ?: JSONObject.NULL).put("pm", pm25Now ?: JSONObject.NULL).toString()
+        .put("tUv", tomorrowUv ?: JSONObject.NULL).put("tAqi", tomorrowAqi ?: JSONObject.NULL).put("pm", pm25Now ?: JSONObject.NULL)
+        .put("wItems", JSONArray(wearItems.map { it.name })).toString()
 
     companion object {
         private fun JSONObject.i(k: String) = if (isNull(k)) null else optInt(k)
@@ -62,6 +64,7 @@ data class WidgetData(
                 (0 until o.getJSONArray("tItems").length()).map { ClothingItem.valueOf(o.getJSONArray("tItems").getString(it)) },
                 if (o.isNull("badge")) null else o.getString("badge"), o.getString("updated"), o.getBoolean("stale"),
                 o.i("tUv"), o.i("tAqi"), o.i("pm"),
+                o.optJSONArray("wItems")?.let { a -> (0 until a.length()).map { ClothingItem.valueOf(a.getString(it)) } } ?: emptyList(),
             )
         }.getOrNull()
 
@@ -86,6 +89,9 @@ data class WidgetData(
             val t = (tomorrow ?: base)
             val td = t.day(at.toLocalDate().plusDays(1))
             val items = td?.let { ClothingRules.advise(it, t.airTomorrow?.aqi, shift).items } ?: emptyList()
+            // 外出穿著：18 點前是今天還要出門，用今天的預報；18 點後就是準備明天
+            val wear = if (at.hour >= 18) items
+                else base.day(at.toLocalDate())?.let { ClothingRules.advise(it, base.airNow?.aqi, shift).items } ?: items
             val label = "明天 · " + when (if (tomorrow != null) tomorrowKind else base.kind) { PlaceKind.SCHOOL -> "學校"; PlaceKind.HOME -> "家"; PlaceKind.CURRENT -> t.town.name }
             val airAlert = listOfNotNull(base.airNow?.aqi, t.airTomorrow?.aqi).maxOrNull()?.let { Aqi.isAlert(it) } == true
             val badge = when {
@@ -102,6 +108,7 @@ data class WidgetData(
                 updated = "${base.updatedAt.format(hm)} 更新", stale = base.ageMinutes(at) > 180,
                 tomorrowUv = td?.uvIndex, tomorrowAqi = t.airTomorrow?.aqi,
                 pm25Now = (t.airNow ?: base.airNow)?.pm25?.let { Math.round(it).toInt() },
+                wearItems = wear,
             )
         }
     }
