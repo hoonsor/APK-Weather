@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity(), SettingsActions, HealthActions {
                     "settings" -> SettingsScreen(this@MainActivity, { screen = "health" }, { screen = "tester" }) { screen = "home"; load() }
                     "health" -> HealthScreen(this@MainActivity) { screen = "settings" }
                     "tester" -> TesterScreen { screen = "settings" }
-                    else -> HomeScreen(home, list, onSelect = { k -> home = home.copy(selected = k); load() }, onRefresh = { load(force = true) },
+                    else -> HomeScreen(home, list, onSelect = { k -> home = home.copy(selected = k, selectedRef = null, snap = null); load() }, onRefresh = { load(force = true) },
+                        onSelectExtra = { r -> home = home.copy(selectedRef = r, snap = null); load() },
                         onSettings = { screen = "settings" }, onSpeak = ::speak)
                 }
             }
@@ -115,11 +116,16 @@ class MainActivity : ComponentActivity(), SettingsActions, HealthActions {
     private fun load(force: Boolean = false) {
         val repo = Graph.repo
         val sel = home.selected
+        // 選的自訂地點被刪掉了就回到目前位置
+        val extras = repo.settings.extraPlaces
+        val ref = home.selectedRef?.takeIf { r -> extras.any { it.ref == r } }
         home = home.copy(
+            extras = extras, selectedRef = ref,
             loading = true, hasHome = repo.settings.place(PlaceKind.HOME) != null, hasSchool = repo.settings.place(PlaceKind.SCHOOL) != null,
             hasCwa = repo.vault.has(tw.hoonsor.weather.data.Vault.CWA), hasMoenv = repo.vault.has(tw.hoonsor.weather.data.Vault.MOENV), shift = repo.settings.shift,
-            snap = home.snap ?: repo.cached(sel),
+            snap = home.snap ?: (if (ref != null) repo.cachedRef(ref) else repo.cached(sel)),
         )
+        if (ref != null) { loadExtra(ref, force); return }
         lifecycleScope.launch {
             var err: String? = null
             val snap = try { repo.snapshot(sel, force = force) } catch (e: AppError) { err = e.message; repo.cached(sel) }
@@ -134,6 +140,22 @@ class MainActivity : ComponentActivity(), SettingsActions, HealthActions {
             home = home.copy(snap = snap, autoKind = auto, tomorrowKind = tKind, tomorrowSnap = tSnap, tomorrowText = tText, typhoon = ty, typhoonText = tyText,
                 impacts = impacts, loading = false, error = err)
             runCatching { WeatherWidgets.pushAll(this@MainActivity) }
+        }
+    }
+
+    /** 自訂地點：現在、明天都用同一個地點；明天播報用鄉鎮名（不走 Agent 的 tomorrowReport） */
+    private fun loadExtra(ref: String, force: Boolean) {
+        val repo = Graph.repo
+        lifecycleScope.launch {
+            var err: String? = null
+            val snap = try { repo.snapshotRef(ref, force = force) } catch (e: AppError) { err = e.message; repo.cachedRef(ref) }
+            val auto = runCatching { repo.autoKind() }.getOrDefault(PlaceKind.CURRENT)
+            val ty = runCatching { repo.typhoons() }.getOrNull()
+            val t = ty?.list?.firstOrNull()
+            val impacts = t?.let { runCatching { repo.impactPlaces(it).map { p -> p.first to p.third.level } }.getOrDefault(emptyList()) }.orEmpty()
+            val tyText = t?.let { runCatching { repo.typhoonText(it, short = false) }.getOrNull() }
+            home = home.copy(snap = snap, autoKind = auto, tomorrowKind = PlaceKind.CURRENT, tomorrowSnap = snap, tomorrowText = null, typhoon = ty, typhoonText = tyText,
+                impacts = impacts, loading = false, error = err)
         }
     }
 

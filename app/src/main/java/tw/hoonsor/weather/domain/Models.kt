@@ -12,6 +12,14 @@ enum class PlaceKind(val key: String) {
     }
 }
 
+/**
+ * 小工具與主畫面可以切換的地點參照（倬 2026-11-27 要求可新增更多地點）：
+ * "auto"＝目前位置＋明天自動選家／學校（原本的行為）、"current"、"home"、"school"、"x:<id>"＝自訂地點。
+ */
+data class SavedPlace(val id: String, val label: String, val town: Town) {
+    val ref get() = "x:$id"
+}
+
 /** 鄉鎮層級的地點。座標是鄉鎮中心點（內建表），不是使用者的實際位置 */
 data class Town(
     val county: String,      // 桃園市

@@ -5,6 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +75,9 @@ data class HomeState(
     val hasCwa: Boolean = false,
     val hasMoenv: Boolean = false,
     val shift: Int = 0,
+    val extras: List<tw.hoonsor.weather.domain.SavedPlace> = emptyList(),
+    /** 選了自訂地點時是 "x:<id>"，否則 null（用 [selected]） */
+    val selectedRef: String? = null,
 )
 
 /** LazyColumn 的項目順序（小工具點擊要捲到 week／tomorrow） */
@@ -89,11 +94,12 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onSettings: () -> Unit,
     onSpeak: (String) -> Unit,
+    onSelectExtra: (String) -> Unit = {},
 ) {
     Box(Modifier.fillMaxSize()) {
         Stars()
         LazyColumn(state = list, contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item(key = "bar") { TopBar(st, onSelect, onRefresh, onSettings) }
+            item(key = "bar") { TopBar(st, onSelect, onSelectExtra, onRefresh, onSettings) }
             item(key = "hero") { Hero(st) }
             item(key = "typhoon") { TyphoonCard(st) }
             item(key = "tomorrow") { TomorrowCard(st, onSpeak) }
@@ -120,12 +126,16 @@ private fun Stars() {
 }
 
 @Composable
-private fun TopBar(st: HomeState, onSelect: (PlaceKind) -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit) {
+private fun TopBar(st: HomeState, onSelect: (PlaceKind) -> Unit, onSelectExtra: (String) -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Chip("目前位置", st.selected == PlaceKind.CURRENT) { onSelect(PlaceKind.CURRENT) }
-        if (st.hasHome) Chip("家" + if (st.autoKind == PlaceKind.HOME) " ●" else "", st.selected == PlaceKind.HOME) { onSelect(PlaceKind.HOME) }
-        if (st.hasSchool) Chip("學校" + if (st.autoKind == PlaceKind.SCHOOL) " ●" else "", st.selected == PlaceKind.SCHOOL) { onSelect(PlaceKind.SCHOOL) }
-        Spacer(Modifier.weight(1f))
+        // 地點多了會超出畫面，左右滑動
+        Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            val ext = st.selectedRef != null
+            Chip("目前位置", !ext && st.selected == PlaceKind.CURRENT) { onSelect(PlaceKind.CURRENT) }
+            if (st.hasHome) Chip("家" + if (st.autoKind == PlaceKind.HOME) " ●" else "", !ext && st.selected == PlaceKind.HOME) { onSelect(PlaceKind.HOME) }
+            if (st.hasSchool) Chip("學校" + if (st.autoKind == PlaceKind.SCHOOL) " ●" else "", !ext && st.selected == PlaceKind.SCHOOL) { onSelect(PlaceKind.SCHOOL) }
+            st.extras.forEach { p -> Chip(p.label, st.selectedRef == p.ref) { onSelectExtra(p.ref) } }
+        }
         if (st.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Palette.accent, strokeWidth = 2.dp)
         else IconBtn(R.drawable.ic_refresh, onRefresh)
         IconBtn(R.drawable.ic_gear, onSettings)
@@ -211,7 +221,7 @@ private fun TomorrowCard(st: HomeState, onSpeak: (String) -> Unit) {
     val s = st.tomorrowSnap ?: st.snap ?: return
     val date = LocalDate.now().plusDays(1)
     val d = s.day(date) ?: return
-    val where = when (st.tomorrowKind) { PlaceKind.SCHOOL -> "學校"; PlaceKind.HOME -> "家"; else -> s.town.name }
+    val where = st.extras.firstOrNull { it.ref == st.selectedRef }?.label ?: when (st.tomorrowKind) { PlaceKind.SCHOOL -> "學校"; PlaceKind.HOME -> "家"; else -> s.town.name }
     val advice = ClothingRules.advise(d, s.airTomorrow?.aqi, st.shift)
     Card {
         CardTitle("明天 ${date.format(md)} ${Broadcast.weekdayName(date).replace("星期", "週")} · $where") {

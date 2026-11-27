@@ -36,6 +36,8 @@ import tw.hoonsor.weather.data.Vault
 import tw.hoonsor.weather.domain.ClothingRules
 import tw.hoonsor.weather.domain.DayForecast
 import tw.hoonsor.weather.domain.PlaceKind
+import tw.hoonsor.weather.domain.SavedPlace
+import tw.hoonsor.weather.data.MAX_EXTRA
 import tw.hoonsor.weather.domain.Town
 import tw.hoonsor.weather.ui.theme.Palette
 import java.time.LocalDate
@@ -79,6 +81,7 @@ fun SettingsScreen(a: SettingsActions, onHealth: () -> Unit, onTester: () -> Uni
 
         Section("1　地點") {
             listOf(PlaceKind.HOME to "家", PlaceKind.SCHOOL to "學校").forEach { (kind, label) -> PlaceRow(kind, label, a) }
+            ExtraPlaces(a)
             val hasLoc = Graph.repo.locator.hasPermission()
             val hasBg = Graph.repo.locator.hasBackground()
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -214,6 +217,76 @@ private fun PlaceRow(kind: PlaceKind, label: String, a: SettingsActions) {
             results.take(4).forEach { r -> Chip(r.full) { s.setPlace(kind, r); Graph.repo.invalidate(kind); editing = false; results = emptyList(); msg = "${label}已設成 ${r.full}"; a.refreshWidgets() } }
         }
         if (t != null) Btn("清除$label") { s.setPlace(kind, null); Graph.repo.invalidate(kind); editing = false }
+    }
+}
+
+/** 家、學校以外的地點（倬 2026-11-27）：新增、改名、上移、刪除（可復原）；小工具點地名依這個順序切換 */
+@Composable
+private fun ExtraPlaces(a: SettingsActions) {
+    val s = Graph.settings
+    val scope = rememberCoroutineScope()
+    val list = s.extraPlaces
+    var adding by remember { mutableStateOf(false) }
+    var q by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<Town>>(emptyList()) }
+    var msg by remember { mutableStateOf<String?>(null) }
+    var renaming by remember { mutableStateOf<String?>(null) }
+    var newName by remember { mutableStateOf("") }
+    var undo by remember { mutableStateOf<Pair<Int, SavedPlace>?>(null) }
+
+    fun save(l: List<SavedPlace>) { s.extraPlaces = l; a.refreshWidgets() }
+    fun add(t: Town) {
+        val p = SavedPlace(java.util.UUID.randomUUID().toString().take(8), name.trim().ifBlank { t.name }, t)
+        save(list + p); adding = false; q = ""; name = ""; results = emptyList(); msg = "已新增「${p.label}」（${t.full}）"
+    }
+
+    Text("其他地點（小工具點地名會依序切換：自動 → 家 → 學校 → 這些地點）", color = Palette.mute, fontSize = 12.sp)
+    list.forEachIndexed { i, p ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(p.label, color = Palette.ink, fontSize = 15.sp)
+                Text(p.town.full, color = Palette.mute, fontSize = 12.sp)
+            }
+            if (i > 0) { Btn("上移") { save(list.toMutableList().apply { add(i - 1, removeAt(i)) }) }; Spacer(Modifier.width(6.dp)) }
+            Btn("改名") { renaming = if (renaming == p.id) null else p.id; newName = p.label }
+            Spacer(Modifier.width(6.dp))
+            Btn("刪除") { save(list.filterNot { it.id == p.id }); Graph.repo.invalidateRef(p.ref); undo = i to p; msg = "已刪除「${p.label}」" }
+        }
+        if (renaming == p.id) Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(newName, { newName = it.take(6) }, Modifier.weight(1f), singleLine = true, colors = fieldColors(),
+                placeholder = { Text("例：阿嬤家（6 字內）", color = Palette.mute) })
+            Spacer(Modifier.width(6.dp))
+            Btn("儲存", primary = true, enabled = newName.isNotBlank()) {
+                save(list.map { if (it.id == p.id) it.copy(label = newName.trim()) else it }); renaming = null
+            }
+        }
+    }
+    msg?.let { m ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(m, color = Palette.mute, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            undo?.let { (i, p) -> Btn("復原") { save(s.extraPlaces.toMutableList().apply { add(i.coerceAtMost(size), p) }); undo = null; msg = "已復原「${p.label}」" } }
+        }
+    }
+    if (list.size >= MAX_EXTRA) { Body("最多 $MAX_EXTRA 個地點", Palette.mute, 12); return }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Btn(if (adding) "取消" else "＋ 新增地點", primary = !adding) { adding = !adding; results = emptyList(); undo = null }
+        if (adding) Btn("用目前位置") {
+            scope.launch {
+                runCatching { Graph.repo.resolveTown(PlaceKind.CURRENT) }.onSuccess { t -> if (t.county.isBlank()) msg = "判斷不出鄉鎮，請用搜尋" else add(t) }
+                    .onFailure { msg = it.message }
+            }
+        }
+    }
+    if (adding) {
+        OutlinedTextField(name, { name = it.take(6) }, Modifier.fillMaxWidth(), singleLine = true, colors = fieldColors(),
+            placeholder = { Text("名稱（選填，例：阿嬤家；空白就用鄉鎮名）", color = Palette.mute) })
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(q, { q = it }, Modifier.weight(1f), singleLine = true, placeholder = { Text("例：臺中市西屯區", color = Palette.mute) }, colors = fieldColors())
+            Spacer(Modifier.width(6.dp))
+            Btn("搜尋", primary = true) { scope.launch { results = a.search(q); if (results.isEmpty()) msg = "找不到「$q」，請加上縣市再試" } }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { results.take(4).forEach { r -> Chip(r.full) { add(r) } } }
     }
 }
 

@@ -97,12 +97,51 @@ class Repository(
 
     fun cached(kind: PlaceKind): Snapshot? = runCatching { SnapshotJson.read(JSONObject(file(kind).readText())) }.getOrNull()
 
-    suspend fun snapshot(kind: PlaceKind, maxAgeMin: Long = 30, force: Boolean = false): Snapshot = lock.withLock {
-        val old = cached(kind)
-        if (!force && old != null && old.ageMinutes() < maxAgeMin && sameTown(kind, old)) return old
+    suspend fun snapshot(kind: PlaceKind, maxAgeMin: Long = 30, force: Boolean = false): Snapshot =
+        load(file(kind), maxAgeMin, force, { sameTown(kind, it) }) { fetch(kind) }
+
+    // ---------------- 地點參照（小工具切換、主畫面自訂地點） ----------------
+
+    /** 小工具點地名時的切換順序：自動 → 家 → 學校 → 自訂地點 */
+    fun refs(): List<String> = buildList {
+        add("auto")
+        if (settings.place(PlaceKind.HOME) != null) add("home")
+        if (settings.place(PlaceKind.SCHOOL) != null) add("school")
+        settings.extraPlaces.forEach { add(it.ref) }
+    }
+
+    /** 下一個地點；目前的已經被刪掉就回到第一個 */
+    fun nextRef(ref: String?): String { val l = refs(); val i = l.indexOf(ref ?: "auto"); return if (i < 0) l.first() else l[(i + 1) % l.size] }
+
+    /** 顯示用名稱：家、學校、自訂名稱；auto／current 回 null（直接顯示鄉鎮名） */
+    fun refLabel(ref: String): String? = when {
+        ref == "home" -> "家"
+        ref == "school" -> "學校"
+        ref.startsWith("x:") -> settings.extra(ref.removePrefix("x:"))?.label
+        else -> null
+    }
+
+    private fun extraFile(id: String) = File(dir, "snap_x_$id.json")
+
+    fun cachedRef(ref: String): Snapshot? =
+        if (ref.startsWith("x:")) runCatching { SnapshotJson.read(JSONObject(extraFile(ref.removePrefix("x:")).readText())) }.getOrNull()
+        else PlaceKind.of(ref)?.let(::cached)
+
+    /** 自訂地點用 CURRENT 當 kind（播報直接講鄉鎮名） */
+    suspend fun snapshotRef(ref: String, maxAgeMin: Long = 30, force: Boolean = false): Snapshot {
+        if (!ref.startsWith("x:")) return snapshot(PlaceKind.of(ref) ?: PlaceKind.CURRENT, maxAgeMin, force)
+        val p = settings.extra(ref.removePrefix("x:")) ?: throw AppError("NOT_FOUND", "這個地點已經刪掉了。")
+        return load(extraFile(p.id), maxAgeMin, force, { it.town.full == p.town.full }) { fetchTown(PlaceKind.CURRENT, p.town) }
+    }
+
+    fun invalidateRef(ref: String) { if (ref.startsWith("x:")) extraFile(ref.removePrefix("x:")).delete() else PlaceKind.of(ref)?.let(::invalidate) }
+
+    private suspend fun load(f: File, maxAgeMin: Long, force: Boolean, valid: (Snapshot) -> Boolean, fetcher: suspend () -> Snapshot): Snapshot = lock.withLock {
+        val old = runCatching { SnapshotJson.read(JSONObject(f.readText())) }.getOrNull()
+        if (!force && old != null && old.ageMinutes() < maxAgeMin && valid(old)) return old
         try {
-            val s = fetch(kind)
-            file(kind).writeText(SnapshotJson.write(s).toString())
+            val s = fetcher()
+            f.writeText(SnapshotJson.write(s).toString())
             settings.lastError = null
             settings.lastRefresh = LocalDateTime.now().toString()
             s
@@ -119,7 +158,13 @@ class Repository(
     private fun sameTown(kind: PlaceKind, s: Snapshot) = kind == PlaceKind.CURRENT || settings.place(kind)?.full == s.town.full
 
     private suspend fun fetch(kind: PlaceKind): Snapshot {
-        var town = resolveTown(kind)
+        val s = fetchTown(kind, resolveTown(kind))
+        if (kind != PlaceKind.CURRENT && settings.place(kind)?.let { it.lat != s.town.lat || it.lon != s.town.lon } == true) settings.setPlace(kind, s.town)
+        return s
+    }
+
+    private suspend fun fetchTown(kind: PlaceKind, town0: Town): Snapshot {
+        var town = town0
         val key = vault.get(Vault.CWA)
         var source = "open-meteo"
         var hours = emptyList<tw.hoonsor.weather.domain.HourPoint>()
@@ -137,7 +182,6 @@ class Repository(
             val (h, d) = OpenMeteoParse.parse(sources.openMeteo(town.lat, town.lon))
             hours = h; days = d
         }
-        if (kind != PlaceKind.CURRENT && settings.place(kind)?.let { it.lat != town.lat || it.lon != town.lon } == true) settings.setPlace(kind, town)
         val (airNow, airTomorrow) = air(town)
         return Snapshot(kind, town, LocalDateTime.now(), source, hours, days, airNow, airTomorrow)
     }

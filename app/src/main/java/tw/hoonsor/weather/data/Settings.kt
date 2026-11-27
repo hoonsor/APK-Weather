@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import tw.hoonsor.weather.domain.PlaceKind
+import tw.hoonsor.weather.domain.SavedPlace
 import tw.hoonsor.weather.domain.Town
 import java.security.KeyStore
 import java.time.LocalDate
@@ -22,6 +23,8 @@ import javax.crypto.spec.GCMParameterSpec
  * 一般設定（settings.xml，會進系統備份與 APP 備份檔）。
  * 授權碼不在這裡，在 [Vault]（Keystore 加密、不備份）。
  */
+const val MAX_EXTRA = 8
+
 class Settings(context: Context) {
     private val p = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val _version = MutableStateFlow(0)
@@ -31,6 +34,19 @@ class Settings(context: Context) {
 
     fun place(kind: PlaceKind): Town? = p.getString("place_${kind.key}", null)?.let { runCatching { SnapshotJson.town(JSONObject(it)) }.getOrNull() }
     fun setPlace(kind: PlaceKind, t: Town?) { p.edit().apply { if (t == null) remove("place_${kind.key}") else putString("place_${kind.key}", SnapshotJson.town(t).toString()) }.apply(); bump() }
+
+    /** 自訂地點（家、學校以外），最多 [MAX_EXTRA] 個，順序就是小工具切換的順序 */
+    var extraPlaces: List<SavedPlace>
+        get() = runCatching {
+            val a = JSONArray(p.getString("places_extra", "[]"))
+            (0 until a.length()).map { a.getJSONObject(it) }.map { SavedPlace(it.getString("id"), it.getString("label"), SnapshotJson.town(it.getJSONObject("town"))) }
+        }.getOrDefault(emptyList())
+        set(v) {
+            val a = JSONArray(v.take(MAX_EXTRA).map { JSONObject().put("id", it.id).put("label", it.label).put("town", SnapshotJson.town(it.town)) })
+            p.edit().putString("places_extra", a.toString()).apply(); bump()
+        }
+
+    fun extra(id: String): SavedPlace? = extraPlaces.firstOrNull { it.id == id }
 
     /** 怕冷 +、怕熱 −（度），穿著規則整體平移 */
     var shift: Int
@@ -94,7 +110,7 @@ class Settings(context: Context) {
 
     // ---- 備份用：一般設定整包匯出／匯入（不含授權碼） ----
     private val backupKeys = listOf("place_current", "place_home", "place_school", "shift", "broadcast_air", "broadcast_typhoon", "notify_typhoon", "notify_air",
-        "morning_rain", "morning_time", "refresh_minutes", "widget_default", "cal_overrides", "moenv_key_date")
+        "morning_rain", "morning_time", "refresh_minutes", "widget_default", "cal_overrides", "moenv_key_date", "places_extra")
 
     fun export(): JSONObject = JSONObject().apply { backupKeys.forEach { k -> p.all[k]?.let { put(k, it) } } }
 

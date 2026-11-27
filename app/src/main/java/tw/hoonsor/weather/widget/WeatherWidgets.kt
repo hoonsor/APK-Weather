@@ -24,6 +24,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.currentState
@@ -59,20 +60,57 @@ import tw.hoonsor.weather.ui.theme.Palette
 object WeatherWidgets {
     val KEY_DATA = stringPreferencesKey("data")
     val KEY_MODE = stringPreferencesKey("mode")
+    /** 4×1 各自記住的地點參照（見 SavedPlace）：沒設定＝"auto" */
+    val KEY_PLACE = stringPreferencesKey("place")
+
+    /**
+     * 算某個地點參照的小工具資料。"auto"：現在用目前位置、明天自動選家／學校（原本的行為）；
+     * 其他：現在和明天都用那個地點（倬 2026-11-27：切換地點後兩頁都跟著換）。
+     * [cacheOnly]：點地名切換時先用快取立刻畫，不等網路。
+     */
+    suspend fun dataFor(ref: String, typhoon: Boolean, cacheOnly: Boolean = false): String {
+        val repo = Graph.repo
+        val shift = repo.settings.shift
+        if (ref == "auto") {
+            val now = repo.cached(PlaceKind.CURRENT) ?: repo.cached(PlaceKind.HOME)
+            val kind = runCatching { repo.autoKind() }.getOrDefault(PlaceKind.CURRENT)
+            val tom = repo.cached(kind) ?: if (cacheOnly) null else runCatching { repo.snapshot(kind, maxAgeMin = 60) }.getOrNull()
+            return WidgetData.build(now, kind, tom, typhoon, shift).toJson()
+        }
+        val snap = repo.cachedRef(ref) ?: if (cacheOnly) null else runCatching { repo.snapshotRef(ref, maxAgeMin = 60) }.getOrNull()
+        val label = repo.refLabel(ref)
+        if (snap == null) return WidgetData.EMPTY.copy(town = label ?: "載入中", updated = "更新中…").toJson()
+        return WidgetData.build(snap, PlaceKind.of(ref) ?: PlaceKind.CURRENT, snap, typhoon, shift, placeLabel = label).toJson()
+    }
+
+    /** 這個 4×1 目前的地點；被刪掉的地點退回 auto */
+    suspend fun placeOf(context: Context, id: GlanceId): String {
+        val ref = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)[KEY_PLACE] ?: "auto"
+        return if (ref in Graph.repo.refs()) ref else "auto"
+    }
+
+    /** 所有 4×1 正在顯示的地點（背景更新只多抓這些自訂地點，省流量） */
+    suspend fun refsInUse(context: Context): Set<String> =
+        GlanceAppWidgetManager(context).getGlanceIds(Weather41::class.java).map { placeOf(context, it) }.toSet()
 
     suspend fun pushAll(context: Context) {
         Graph.init(context)
         val repo = Graph.repo
-        val now = repo.cached(PlaceKind.CURRENT) ?: repo.cached(PlaceKind.HOME)
-        val kind = runCatching { repo.autoKind() }.getOrDefault(PlaceKind.CURRENT)
-        val tom = repo.cached(kind) ?: runCatching { repo.snapshot(kind, maxAgeMin = 60) }.getOrNull()
         val ty = runCatching { repo.typhoons(maxAgeMin = 60).list.isNotEmpty() }.getOrDefault(false)
-        val json = WidgetData.build(now, kind, tom, ty, repo.settings.shift).toJson()
+        val memo = HashMap<String, String>()
         val m = GlanceAppWidgetManager(context)
-        listOf(Weather41() to Weather41::class.java, WeatherNow22() to WeatherNow22::class.java, WeatherTomorrow22() to WeatherTomorrow22::class.java)
+        for (id in m.getGlanceIds(Weather41::class.java)) {
+            val ref = placeOf(context, id)
+            val j = memo[ref] ?: dataFor(ref, ty).also { memo[ref] = it }
+            updateAppWidgetState(context, id) { it[KEY_DATA] = j }
+            Weather41().update(context, id)
+        }
+        // 2×2 沒有切換地點，維持 auto
+        val auto = memo["auto"] ?: dataFor("auto", ty)
+        listOf(WeatherNow22() to WeatherNow22::class.java, WeatherTomorrow22() to WeatherTomorrow22::class.java)
             .forEach { (w, cls) ->
                 m.getGlanceIds(cls).forEach { id ->
-                    updateAppWidgetState(context, id) { it[KEY_DATA] = json }
+                    updateAppWidgetState(context, id) { it[KEY_DATA] = auto }
                     w.update(context, id)
                 }
             }
@@ -175,13 +213,19 @@ class Weather41 : GlanceAppWidget() {
             GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = vPad, bottom = vPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(GlanceModifier.fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
+                // 倬 2026-11-27：點地名切到下一個地點（自動 → 家 → 學校 → 自訂地點），兩頁都跟著換
+                // 可點範圍往右、上下加大：地名短（例如「家」）時也好點
+                Row(GlanceModifier.clickable(actionRunCallback<CyclePlace>()).padding(top = 3.dp, bottom = 3.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                     T(d.town, if (compact) 12.sp else 13.sp)
+                    Spacer(GlanceModifier.width(2.dp))
+                    Img(R.drawable.ic_swap, if (compact) 11 else 12)
                     if (d.badge != null) { Spacer(GlanceModifier.width(4.dp)); Badge(d.badge) }
                 }
-                T(deg(d.temp), if (compact) 30.sp else 36.sp)
-                T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
+                Column(GlanceModifier.clickable(WeatherWidgets.open(context))) {
+                    T(deg(d.temp), if (compact) 30.sp else 36.sp)
+                    T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
+                }
             }
             // 倬 2026-11-27：溫度右邊的空位補滿：上面天氣圖示＋水滴降雨機率，下面外出穿著圖示
             // 倬 2026-11-27：這一欄緊貼溫度（寬度跟內容一樣、間距 8dp），把空間留給右邊 4 天
@@ -304,6 +348,26 @@ class ToggleMode : ActionCallback {
         val def = Graph.settings.widgetDefault
         updateAppWidgetState(context, glanceId) { p -> p[WeatherWidgets.KEY_MODE] = if ((p[WeatherWidgets.KEY_MODE] ?: def) == "A") "C" else "A" }
         Weather41().update(context, glanceId)
+    }
+}
+
+/** 點 4×1 的地名：切到下一個地點，先用快取立刻畫，再抓新資料 */
+class CyclePlace : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        Graph.init(context)
+        val repo = Graph.repo
+        val next = repo.nextRef(WeatherWidgets.placeOf(context, glanceId))
+        val ty = runCatching { repo.typhoons(maxAgeMin = 120).list.isNotEmpty() }.getOrDefault(false)
+        val quick = WeatherWidgets.dataFor(next, ty, cacheOnly = true)
+        updateAppWidgetState(context, glanceId) { it[WeatherWidgets.KEY_PLACE] = next; it[WeatherWidgets.KEY_DATA] = quick }
+        Weather41().update(context, glanceId)
+        // 快取太舊或沒有就抓新的（自動模式要抓目前位置）
+        runCatching { if (next == "auto") repo.snapshot(PlaceKind.CURRENT, maxAgeMin = 30) else repo.snapshotRef(next, maxAgeMin = 30) }
+        val fresh = WeatherWidgets.dataFor(next, ty)
+        if (fresh != quick && WeatherWidgets.placeOf(context, glanceId) == next) {
+            updateAppWidgetState(context, glanceId) { it[WeatherWidgets.KEY_DATA] = fresh }
+            Weather41().update(context, glanceId)
+        }
     }
 }
 

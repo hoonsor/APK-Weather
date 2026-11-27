@@ -58,6 +58,13 @@ class WidgetDataTest {
         assertTrue(d.wearItems.isNotEmpty())
     }
 
+    @Test fun placeLabelForSwitchedPlace() {
+        // 小工具切到自訂地點：地名顯示自訂名稱，明天標題也用它
+        val d = WidgetData.build(snap(PlaceKind.CURRENT), PlaceKind.CURRENT, snap(PlaceKind.CURRENT), typhoonActive = false, shift = 0, at = now, placeLabel = "阿嬤家")
+        assertEquals("阿嬤家", d.town)
+        assertEquals("明天 · 阿嬤家", d.tomorrowLabel)
+    }
+
     @Test fun uvLevels() {
         assertEquals(tw.hoonsor.weather.domain.Uv.Level.LOW, tw.hoonsor.weather.domain.Uv.level(2))
         assertEquals("中量", tw.hoonsor.weather.domain.Uv.level(5).label)

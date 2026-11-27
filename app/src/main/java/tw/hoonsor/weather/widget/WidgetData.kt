@@ -77,7 +77,7 @@ data class WidgetData(
          * [now]：目前位置（沒有就用家）的快照；[tomorrow]：明天播報地點的快照（auto 規則）。
          * [typhoonActive]：有颱風時標籤優先於空品。
          */
-        fun build(now: Snapshot?, tomorrowKind: PlaceKind, tomorrow: Snapshot?, typhoonActive: Boolean, shift: Int, at: LocalDateTime = LocalDateTime.now()): WidgetData {
+        fun build(now: Snapshot?, tomorrowKind: PlaceKind, tomorrow: Snapshot?, typhoonActive: Boolean, shift: Int, at: LocalDateTime = LocalDateTime.now(), placeLabel: String? = null): WidgetData {
             if (now == null && tomorrow == null) return EMPTY
             val base = now ?: tomorrow!!
             val n = base.now(at)
@@ -92,7 +92,7 @@ data class WidgetData(
             // 外出穿著：18 點前是今天還要出門，用今天的預報；18 點後就是準備明天
             val wear = if (at.hour >= 18) items
                 else base.day(at.toLocalDate())?.let { ClothingRules.advise(it, base.airNow?.aqi, shift).items } ?: items
-            val label = "明天 · " + when (if (tomorrow != null) tomorrowKind else base.kind) { PlaceKind.SCHOOL -> "學校"; PlaceKind.HOME -> "家"; PlaceKind.CURRENT -> t.town.name }
+            val label = "明天 · " + (placeLabel ?: when (if (tomorrow != null) tomorrowKind else base.kind) { PlaceKind.SCHOOL -> "學校"; PlaceKind.HOME -> "家"; PlaceKind.CURRENT -> t.town.name })
             val airAlert = listOfNotNull(base.airNow?.aqi, t.airTomorrow?.aqi).maxOrNull()?.let { Aqi.isAlert(it) } == true
             val badge = when {
                 typhoonActive -> "颱風"
@@ -100,7 +100,7 @@ data class WidgetData(
                 else -> null
             }
             return WidgetData(
-                town = base.town.name, temp = n?.temp, icon = n?.let { WeatherIcons.of(it.weatherCode, it.weather, night) } ?: WeatherIcon.CLOUD,
+                town = placeLabel ?: base.town.name, temp = n?.temp, icon = n?.let { WeatherIcons.of(it.weatherCode, it.weather, night) } ?: WeatherIcon.CLOUD,
                 hi = range?.second, lo = range?.first, rainNow = n?.rainNext3h, days = days,
                 tomorrowLabel = label, tomorrowLo = td?.tempMin, tomorrowHi = td?.tempMax,
                 tomorrowIcon = td?.let { WeatherIcons.of(it.weatherCode, it.weather) } ?: WeatherIcon.CLOUD,

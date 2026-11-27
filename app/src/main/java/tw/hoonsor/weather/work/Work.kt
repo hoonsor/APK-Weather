@@ -71,6 +71,8 @@ class RefreshWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
         }
         var ok = 0
         for (k in kinds) if (runCatching { repo.snapshot(k, maxAgeMin = 10) }.isSuccess) ok++
+        // 小工具正在顯示的自訂地點也更新（沒在用的不抓，省流量）
+        runCatching { WeatherWidgets.refsInUse(applicationContext).filter { it.startsWith("x:") }.forEach { runCatching { repo.snapshotRef(it, maxAgeMin = 10) } } }
         runCatching { Alerts.check(applicationContext) }
         runCatching { WeatherWidgets.pushAll(applicationContext) }
         return if (ok > 0 || kinds.isEmpty()) Result.success() else Result.retry()
