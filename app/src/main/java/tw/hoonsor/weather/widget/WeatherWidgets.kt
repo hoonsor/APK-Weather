@@ -175,7 +175,7 @@ class Weather41 : GlanceAppWidget() {
             GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = vPad, bottom = vPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.width(112.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
+            Column(GlanceModifier.width(124.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     T(d.town, if (compact) 12.sp else 13.sp)
                     if (d.badge != null) { Spacer(GlanceModifier.width(4.dp)); Badge(d.badge) }
@@ -183,9 +183,10 @@ class Weather41 : GlanceAppWidget() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     T(deg(d.temp), if (compact) 30.sp else 36.sp)
                     Spacer(GlanceModifier.width(4.dp))
+                    // 倬 2026-11-27：今天的天氣圖示、水滴、降雨機率都再大一點
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Img(WeatherWidgets.icon(d.icon), if (compact) 24 else 28)
-                        RainPct(d.rainNow, 11.sp)
+                        Img(WeatherWidgets.icon(d.icon), if (compact) 30 else 36)
+                        RainPct(d.rainNow, if (compact) 12.sp else 13.sp, if (compact) 12 else 14)
                     }
                 }
                 T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
@@ -222,14 +223,19 @@ class Weather41 : GlanceAppWidget() {
         ) {
             // 明天天氣
             Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block_tomorrow)).padding(horizontal = 7.dp, vertical = 4.dp).clickable(WeatherWidgets.open(context, "tomorrow"))) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (d.badge != null) { T("明天", 11.sp, amber); Spacer(GlanceModifier.width(3.dp)); Badge(d.badge) } else T(d.tomorrowLabel, 11.sp, amber)
-                }
-                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-                    T(if (d.tomorrowLo != null) "${d.tomorrowLo}–${d.tomorrowHi}°" else "--", if (compact) 15.sp else 17.sp, modifier = GlanceModifier.defaultWeight())
+                // 倬 2026-11-27：氣溫放大、獨佔中間一整行；天氣圖示移到標題列右側，降雨機率靠右下
+                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                        if (d.badge != null) { T("明天", 11.sp, amber); Spacer(GlanceModifier.width(3.dp)); Badge(d.badge) } else T(d.tomorrowLabel, 11.sp, amber)
+                    }
                     Img(WeatherWidgets.icon(d.tomorrowIcon), if (compact) 20 else 24)
                 }
-                RainPct(listOfNotNull(d.tomorrowRainDay, d.tomorrowRainNight).maxOrNull(), 11.sp)
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    T(if (d.tomorrowLo != null) "${d.tomorrowLo}–${d.tomorrowHi}°" else "--", if (compact) 21.sp else 25.sp)
+                }
+                Row(GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+                    RainPct(listOfNotNull(d.tomorrowRainDay, d.tomorrowRainNight).maxOrNull(), 11.sp)
+                }
             }
             Spacer(GlanceModifier.width(5.dp))
             // 明天紫外線
@@ -270,10 +276,10 @@ private fun aqiShort(l: Aqi.Level) = when (l) {
 
 /** 水滴＋降雨機率（沒有資料就不顯示） */
 @Composable
-private fun RainPct(p: Int?, size: TextUnit) {
+private fun RainPct(p: Int?, size: TextUnit, drop: Int = 10) {
     if (p == null) return
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Img(R.drawable.ic_drop, 10)
+        Img(R.drawable.ic_drop, drop)
         T(" $p%", size, rainC)
     }
 }
