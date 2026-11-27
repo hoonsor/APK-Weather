@@ -39,7 +39,20 @@ class WidgetDataTest {
         assertTrue(ClothingItem.MASK in d.tomorrowItems)
         assertEquals("空品橘", d.badge)
         assertFalse(d.stale)
+        // 版面 C 三等分用的資料：明天紫外線、明天空品預報、附近測站現在的 PM2.5
+        assertEquals(5, d.tomorrowUv); assertEquals(112, d.tomorrowAqi); assertEquals(15, d.pm25Now)
         assertEquals(d, WidgetData.fromJson(d.toJson()))
+        // 舊版存的 JSON 沒有新欄位也要讀得出來（升級後第一次更新前）
+        val old = org.json.JSONObject(d.toJson()).apply { remove("tUv"); remove("tAqi"); remove("pm") }.toString()
+        assertEquals(null, WidgetData.fromJson(old)!!.tomorrowUv)
+    }
+
+    @Test fun uvLevels() {
+        assertEquals(tw.hoonsor.weather.domain.Uv.Level.LOW, tw.hoonsor.weather.domain.Uv.level(2))
+        assertEquals("中量", tw.hoonsor.weather.domain.Uv.level(5).label)
+        assertEquals("高量", tw.hoonsor.weather.domain.Uv.level(7).label)
+        assertEquals("過量", tw.hoonsor.weather.domain.Uv.level(10).label)
+        assertEquals("危險", tw.hoonsor.weather.domain.Uv.level(11).label)
     }
 
     @Test fun typhoonBadgeWinsAndStale() {

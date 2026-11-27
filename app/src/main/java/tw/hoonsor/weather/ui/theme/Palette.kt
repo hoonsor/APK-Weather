@@ -23,4 +23,23 @@ object Palette {
     val ok = Color.hsl(150f, .50f, .65f)
     val panelC1 = Color.hsl(212f, .40f, .18f, .95f)
     val panelC2 = Color.hsl(250f, .28f, .16f, .95f)
+
+    /** AQI 顏色（DESIGN.md 第 2 節，環境部 2025 新版） */
+    fun aqi(l: tw.hoonsor.weather.domain.Aqi.Level): Color = when (l) {
+        tw.hoonsor.weather.domain.Aqi.Level.GREEN -> ok
+        tw.hoonsor.weather.domain.Aqi.Level.YELLOW -> Color.hsl(50f, .85f, .62f)
+        tw.hoonsor.weather.domain.Aqi.Level.ORANGE -> warn
+        tw.hoonsor.weather.domain.Aqi.Level.RED -> Color.hsl(0f, .75f, .62f)
+        tw.hoonsor.weather.domain.Aqi.Level.PURPLE -> Color.hsl(285f, .45f, .62f)
+        tw.hoonsor.weather.domain.Aqi.Level.MAROON -> Color.hsl(345f, .5f, .42f)
+    }
+
+    /** 紫外線顏色：低量 ok、中量黃、高量 warn、過量 danger、危險紫 */
+    fun uv(l: tw.hoonsor.weather.domain.Uv.Level): Color = when (l) {
+        tw.hoonsor.weather.domain.Uv.Level.LOW -> ok
+        tw.hoonsor.weather.domain.Uv.Level.MODERATE -> Color.hsl(50f, .85f, .62f)
+        tw.hoonsor.weather.domain.Uv.Level.HIGH -> warn
+        tw.hoonsor.weather.domain.Uv.Level.VERY_HIGH -> danger
+        tw.hoonsor.weather.domain.Uv.Level.EXTREME -> Color.hsl(285f, .45f, .62f)
+    }
 }

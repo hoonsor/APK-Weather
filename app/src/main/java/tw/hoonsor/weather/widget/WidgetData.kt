@@ -35,6 +35,9 @@ data class WidgetData(
     val badge: String?,           // 「颱風」或「空品橘」；4×1 地點旁的小標籤
     val updated: String,          // 「20:40 更新」
     val stale: Boolean,
+    val tomorrowUv: Int? = null,      // 明天紫外線指數（氣象署 1 週資料／Open-Meteo）
+    val tomorrowAqi: Int? = null,     // 明天空品預報 AQI（環境部空品區預報；沒有 PM2.5 濃度預報）
+    val pm25Now: Int? = null,         // 明天地點附近測站現在的 PM2.5（μg/m³）
 ) {
     data class Day(val name: String, val icon: WeatherIcon, val hi: Int, val lo: Int)
 
@@ -43,7 +46,8 @@ data class WidgetData(
         .put("days", JSONArray(days.map { JSONObject().put("n", it.name).put("i", it.icon.name).put("hi", it.hi).put("lo", it.lo) }))
         .put("tLabel", tomorrowLabel).put("tLo", tomorrowLo ?: JSONObject.NULL).put("tHi", tomorrowHi ?: JSONObject.NULL).put("tIcon", tomorrowIcon.name)
         .put("tRd", tomorrowRainDay ?: JSONObject.NULL).put("tRn", tomorrowRainNight ?: JSONObject.NULL)
-        .put("tItems", JSONArray(tomorrowItems.map { it.name })).put("badge", badge ?: JSONObject.NULL).put("updated", updated).put("stale", stale).toString()
+        .put("tItems", JSONArray(tomorrowItems.map { it.name })).put("badge", badge ?: JSONObject.NULL).put("updated", updated).put("stale", stale)
+        .put("tUv", tomorrowUv ?: JSONObject.NULL).put("tAqi", tomorrowAqi ?: JSONObject.NULL).put("pm", pm25Now ?: JSONObject.NULL).toString()
 
     companion object {
         private fun JSONObject.i(k: String) = if (isNull(k)) null else optInt(k)
@@ -57,6 +61,7 @@ data class WidgetData(
                 o.getString("tLabel"), o.i("tLo"), o.i("tHi"), WeatherIcon.valueOf(o.getString("tIcon")), o.i("tRd"), o.i("tRn"),
                 (0 until o.getJSONArray("tItems").length()).map { ClothingItem.valueOf(o.getJSONArray("tItems").getString(it)) },
                 if (o.isNull("badge")) null else o.getString("badge"), o.getString("updated"), o.getBoolean("stale"),
+                o.i("tUv"), o.i("tAqi"), o.i("pm"),
             )
         }.getOrNull()
 
@@ -95,6 +100,8 @@ data class WidgetData(
                 tomorrowIcon = td?.let { WeatherIcons.of(it.weatherCode, it.weather) } ?: WeatherIcon.CLOUD,
                 tomorrowRainDay = td?.rainDay, tomorrowRainNight = td?.rainNight, tomorrowItems = items, badge = badge,
                 updated = "${base.updatedAt.format(hm)} 更新", stale = base.ageMinutes(at) > 180,
+                tomorrowUv = td?.uvIndex, tomorrowAqi = t.airTomorrow?.aqi,
+                pm25Now = (t.airNow ?: base.airNow)?.pm25?.let { Math.round(it).toInt() },
             )
         }
     }

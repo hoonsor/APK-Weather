@@ -137,7 +137,7 @@ fun SettingsScreen(a: SettingsActions, onHealth: () -> Unit, onTester: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Body("4×1 預設版面", size = 14); Spacer(Modifier.weight(1f))
                 Chip("A 現在＋4 天", s.widgetDefault == "A") { s.widgetDefault = "A"; a.refreshWidgets() }
-                Chip("C 現在｜明天", s.widgetDefault == "C") { s.widgetDefault = "C"; a.refreshWidgets() }
+                Chip("C 明天｜紫外線｜空品", s.widgetDefault == "C") { s.widgetDefault = "C"; a.refreshWidgets() }
             }
             Body("已放在桌面的 4×1 各自記住版面，點右側圓點切換。", Palette.mute, 12)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

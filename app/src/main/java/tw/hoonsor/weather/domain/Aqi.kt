@@ -24,3 +24,16 @@ object Aqi {
 
     fun isAlert(aqi: Int) = aqi >= ALERT
 }
+
+/** 紫外線指數分級（氣象署：0–2 低量、3–5 中量、6–7 高量、8–10 過量、11 以上危險） */
+object Uv {
+    enum class Level(val label: String) { LOW("低量"), MODERATE("中量"), HIGH("高量"), VERY_HIGH("過量"), EXTREME("危險") }
+
+    fun level(uv: Int): Level = when {
+        uv <= 2 -> Level.LOW
+        uv <= 5 -> Level.MODERATE
+        uv <= 7 -> Level.HIGH
+        uv <= 10 -> Level.VERY_HIGH
+        else -> Level.EXTREME
+    }
+}

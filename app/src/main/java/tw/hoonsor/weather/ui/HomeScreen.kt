@@ -303,7 +303,7 @@ private fun AirCard(st: HomeState) {
     if (!st.hasMoenv) return
     val a = st.snap?.airNow ?: return
     val lv = Aqi.level(a.aqi)
-    val color = when (lv) { Aqi.Level.GREEN -> Palette.ok; Aqi.Level.YELLOW -> Color.hsl(50f, .85f, .62f); Aqi.Level.ORANGE -> Palette.warn; Aqi.Level.RED -> Color.hsl(0f, .75f, .62f); Aqi.Level.PURPLE -> Color.hsl(285f, .45f, .62f); Aqi.Level.MAROON -> Color.hsl(345f, .5f, .42f) }
+    val color = Palette.aqi(lv)
     Card(border = if (Aqi.isAlert(a.aqi)) Palette.warn.copy(alpha = .45f) else Palette.cardLine) {
         CardTitle("空氣品質", a.area)
         Row(verticalAlignment = Alignment.CenterVertically) {

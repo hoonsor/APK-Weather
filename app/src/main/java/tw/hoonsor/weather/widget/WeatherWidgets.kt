@@ -13,11 +13,13 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
@@ -45,7 +47,9 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import tw.hoonsor.weather.Graph
 import tw.hoonsor.weather.R
+import tw.hoonsor.weather.domain.Aqi
 import tw.hoonsor.weather.domain.ClothingItem
+import tw.hoonsor.weather.domain.Uv
 import tw.hoonsor.weather.domain.PlaceKind
 import tw.hoonsor.weather.domain.WeatherIcon
 import tw.hoonsor.weather.ui.MainActivity
@@ -131,6 +135,8 @@ private fun deg(v: Int?) = v?.let { "$it°" } ?: "--"
 
 class Weather41 : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
+    /** 用實際大小排版：桌面格子矮時切到精簡排法 */
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         Graph.init(context)
@@ -157,31 +163,44 @@ class Weather41 : GlanceAppWidget() {
         }
     }
 
+    /**
+     * 版面 A：左「現在」（溫度、天氣圖示，圖示下方水滴＋降雨機率）、中間未來 4 天、右側切換鈕。
+     * 桌面格子比較矮時（< 100dp，倬的手機實測會把最低溫切掉）改成精簡排法：字縮小、4 天高低溫併成一行。
+     */
     @Composable
     private fun ModeA(context: Context, d: WidgetData) {
+        val compact = LocalSize.current.height < 100.dp
+        val vPad = if (compact) 3.dp else 6.dp
         Row(
-            GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_scrim)).padding(start = 10.dp, end = 4.dp, top = vPad, bottom = vPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.width(108.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
+            Column(GlanceModifier.width(112.dp).fillMaxHeight().clickable(WeatherWidgets.open(context)), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    T(d.town, 13.sp)
+                    T(d.town, if (compact) 12.sp else 13.sp)
                     if (d.badge != null) { Spacer(GlanceModifier.width(4.dp)); Badge(d.badge) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    T(deg(d.temp), 36.sp)
-                    Spacer(GlanceModifier.width(2.dp))
-                    Img(WeatherWidgets.icon(d.icon), 30)
+                    T(deg(d.temp), if (compact) 30.sp else 36.sp)
+                    Spacer(GlanceModifier.width(4.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Img(WeatherWidgets.icon(d.icon), if (compact) 24 else 28)
+                        RainPct(d.rainNow, 11.sp)
+                    }
                 }
-                T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", 12.sp, if (d.stale) mute else soft)
+                T(if (d.stale) d.updated else "${deg(d.hi)} / ${deg(d.lo)}", if (compact) 11.sp else 12.sp, if (d.stale) mute else soft)
             }
             Row(GlanceModifier.defaultWeight().fillMaxHeight().clickable(WeatherWidgets.open(context, "week")), verticalAlignment = Alignment.CenterVertically) {
                 d.days.forEach { day ->
                     Column(GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        T(day.name, 12.sp, soft)
-                        Img(WeatherWidgets.icon(day.icon), 24)
-                        T("${day.hi}°", 12.sp)
-                        T("${day.lo}°", 12.sp, mute)
+                        T(day.name, if (compact) 11.sp else 12.sp, soft)
+                        Img(WeatherWidgets.icon(day.icon), if (compact) 22 else 24)
+                        if (compact) {
+                            T("${day.hi}°/${day.lo}°", 11.sp)
+                        } else {
+                            T("${day.hi}°", 12.sp)
+                            T("${day.lo}°", 12.sp, mute)
+                        }
                     }
                 }
             }
@@ -189,38 +208,73 @@ class Weather41 : GlanceAppWidget() {
         }
     }
 
+    /**
+     * 版面 C：三等分（倬 2026-11-27 要求）：明天天氣｜明天紫外線｜明天空品（AQI 預報＋附近測站現在的 PM2.5）。
+     * 環境部只有「空品區 AQI 預報」，沒有 PM2.5 濃度預報，所以 PM2.5 顯示的是現在值。
+     */
     @Composable
     private fun ModeC(context: Context, d: WidgetData) {
+        val compact = LocalSize.current.height < 100.dp
+        val big = if (compact) 18.sp else 22.sp
         Row(
-            GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_panel_c)).padding(start = 7.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
+            GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.bg_panel_c)).padding(start = 7.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block)).padding(horizontal = 9.dp, vertical = 5.dp).clickable(WeatherWidgets.open(context))) {
-                T("現在 · ${d.town}", 11.sp, soft)
-                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-                    T(deg(d.temp), 26.sp, modifier = GlanceModifier.defaultWeight())
-                    Img(WeatherWidgets.icon(d.icon), 28)
+            // 明天天氣
+            Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block_tomorrow)).padding(horizontal = 7.dp, vertical = 4.dp).clickable(WeatherWidgets.open(context, "tomorrow"))) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (d.badge != null) { T("明天", 11.sp, amber); Spacer(GlanceModifier.width(3.dp)); Badge(d.badge) } else T(d.tomorrowLabel, 11.sp, amber)
                 }
-                T("${deg(d.hi)}/${deg(d.lo)}" + (d.rainNow?.let { " · 雨 $it%" } ?: ""), 11.sp, soft)
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    T(if (d.tomorrowLo != null) "${d.tomorrowLo}–${d.tomorrowHi}°" else "--", if (compact) 15.sp else 17.sp, modifier = GlanceModifier.defaultWeight())
+                    Img(WeatherWidgets.icon(d.tomorrowIcon), if (compact) 20 else 24)
+                }
+                RainPct(listOfNotNull(d.tomorrowRainDay, d.tomorrowRainNight).maxOrNull(), 11.sp)
             }
-            Spacer(GlanceModifier.width(6.dp))
-            Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block_tomorrow)).padding(horizontal = 9.dp, vertical = 5.dp).clickable(WeatherWidgets.open(context, "tomorrow"))) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    T(d.tomorrowLabel, 11.sp, amber)
-                    if (d.badge != null) { Spacer(GlanceModifier.width(3.dp)); Badge(d.badge) }
-                }
+            Spacer(GlanceModifier.width(5.dp))
+            // 明天紫外線
+            val uvLevel = d.tomorrowUv?.let(Uv::level)
+            val uvC = uvLevel?.let { ColorProvider(Palette.uv(it)) } ?: mute
+            Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block)).padding(horizontal = 7.dp, vertical = 4.dp).clickable(WeatherWidgets.open(context, "tomorrow"))) {
+                Row(verticalAlignment = Alignment.CenterVertically) { Img(R.drawable.ic_c_uv, 12); T(" 紫外線", 11.sp, soft) }
                 Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
-                    T(if (d.tomorrowLo != null) "${d.tomorrowLo}–${d.tomorrowHi}°" else "--", 22.sp, modifier = GlanceModifier.defaultWeight())
-                    Img(WeatherWidgets.icon(d.tomorrowIcon), 28)
+                    T(d.tomorrowUv?.toString() ?: "--", big, uvC)
+                    Spacer(GlanceModifier.width(4.dp))
+                    T(uvLevel?.label ?: "", 11.sp, uvC)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    d.tomorrowItems.take(3).forEach { Img(WeatherWidgets.cloth(it), 15) }
-                    val r = listOfNotNull(d.tomorrowRainDay, d.tomorrowRainNight).maxOrNull()
-                    if (r != null) T(" 雨 $r%", 11.sp, rainC)
+                T(if (d.tomorrowUv == null) "沒有資料" else if (d.tomorrowUv >= 6) "中午要防曬" else "不用特別防曬", 11.sp, soft)
+            }
+            Spacer(GlanceModifier.width(5.dp))
+            // 明天空品
+            val aqiLevel = d.tomorrowAqi?.let(Aqi::level)
+            val aqiC = aqiLevel?.let { ColorProvider(Palette.aqi(it)) } ?: mute
+            Column(GlanceModifier.defaultWeight().fillMaxHeight().background(ImageProvider(R.drawable.bg_block)).padding(horizontal = 7.dp, vertical = 4.dp).clickable(WeatherWidgets.open(context))) {
+                Row(verticalAlignment = Alignment.CenterVertically) { Img(R.drawable.ic_haze, 12); T(" 空品", 11.sp, soft) }
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                    T(d.tomorrowAqi?.toString() ?: "--", big, aqiC)
+                    Spacer(GlanceModifier.width(4.dp))
+                    T(aqiLevel?.let(::aqiShort) ?: "", 11.sp, aqiC)
                 }
+                T(d.pm25Now?.let { "PM2.5 $it" } ?: "沒有空品資料", 11.sp, soft)
             }
             Switch("C")
         }
+    }
+}
+
+/** 小工具空間小，AQI 等級用兩個字：良好、普通，橘色以上直接講顏色 */
+private fun aqiShort(l: Aqi.Level) = when (l) {
+    Aqi.Level.GREEN -> "良好"; Aqi.Level.YELLOW -> "普通"; Aqi.Level.ORANGE -> "橘色"
+    Aqi.Level.RED -> "紅色"; Aqi.Level.PURPLE -> "紫色"; Aqi.Level.MAROON -> "褐紅"
+}
+
+/** 水滴＋降雨機率（沒有資料就不顯示） */
+@Composable
+private fun RainPct(p: Int?, size: TextUnit) {
+    if (p == null) return
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Img(R.drawable.ic_drop, 10)
+        T(" $p%", size, rainC)
     }
 }
 
@@ -254,7 +308,7 @@ class WeatherNow22 : GlanceAppWidget() {
                 Spacer(GlanceModifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     d.tomorrowItems.take(3).forEach { Img(WeatherWidgets.cloth(it), 17) }
-                    T(" 明天", 11.sp, soft)
+                    T(" 明天" + d.tomorrowItems.take(2).joinToString("＋", prefix = " ") { it.label }, 11.sp, soft)
                 }
             }
         }
@@ -274,7 +328,10 @@ class WeatherTomorrow22 : GlanceAppWidget() {
                 }
                 T("降雨 ${d.tomorrowRainDay?.let { "$it%" } ?: "--"} → ${d.tomorrowRainNight?.let { "$it%" } ?: "--"}", 12.sp, rainC)
                 Spacer(GlanceModifier.height(6.dp))
-                Row { d.tomorrowItems.take(4).forEach { Img(WeatherWidgets.cloth(it), 18) } }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    d.tomorrowItems.take(3).forEach { Img(WeatherWidgets.cloth(it), 18) }
+                    T(" " + d.tomorrowItems.take(3).joinToString("＋") { it.label }, 11.sp, soft)
+                }
             }
         }
     }
